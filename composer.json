@@ -35,6 +35,8 @@
     "autoload": {
         "psr-4": {
             "SilverStripe\\FullTextSearch\\": "src/",
+            "SilverStripe\\FullTextSearch\\Solr\\": "src/Solr",
+            "SilverStripe\\FullTextSearch\\Solr\\Services\\": "src/Solr/Services",
             "SilverStripe\\FullTextSearch\\Tests\\": "tests/"
         }
     },
