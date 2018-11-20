@@ -180,49 +180,6 @@ abstract class SolrIndex extends SearchIndex
         return array($df);
     }
 
-    public function getFieldDefinitions()
-    {
-        $xml = array();
-        $stored = $this->getStoredDefault();
-
-        $xml[] = "";
-
-        // Add the hardcoded field definitions
-
-        $xml[] = "<field name='_documentid' type='string' indexed='true' stored='true' required='true' />";
-
-        $xml[] = "<field name='ID' type='tint' indexed='true' stored='true' required='true' />";
-        $xml[] = "<field name='ClassName' type='string' indexed='true' stored='true' required='true' />";
-        $xml[] = "<field name='ClassHierarchy' type='string' indexed='true' stored='true' required='true' multiValued='true' />";
-
-        // Add the fulltext collation field
-
-        $df = $this->getDefaultField();
-        $xml[] = "<field name='{$df}' type='htmltext' indexed='true' stored='{$stored}' multiValued='true' />" ;
-
-        // Add the user-specified fields
-
-        foreach ($this->fulltextFields as $name => $field) {
-            $xml[] = $this->getFieldDefinition($name, $field, self::$fulltextTypeMap);
-        }
-
-        foreach ($this->filterFields as $name => $field) {
-            if ($field['fullfield'] == 'ID' || $field['fullfield'] == 'ClassName') {
-                continue;
-            }
-            $xml[] = $this->getFieldDefinition($name, $field);
-        }
-
-        foreach ($this->sortFields as $name => $field) {
-            if ($field['fullfield'] == 'ID' || $field['fullfield'] == 'ClassName') {
-                continue;
-            }
-            $xml[] = $this->getFieldDefinition($name, $field);
-        }
-
-        return implode("\n\t\t", $xml);
-    }
-
     /**
      * Extract first suggestion text from collated values
      *
@@ -390,6 +347,32 @@ abstract class SolrIndex extends SearchIndex
     }
 
     /**
+     * [transformFieldName description]
+     * @param  String   $version    [description]
+     * @return String               [description]
+     */
+    protected function gteVersion($version)
+    {
+        $solrOpts = Solr::solr_options();
+        return version_compare($solrOpts['version'], $version, '>=');
+    }
+
+    /**
+     * [transformFieldName description]
+     * @param  String   $name   [description]
+     * @param  Boolean  $useExt [description]
+     * @return String           [description]
+     */
+    protected function transformFieldName($name, $useExt = true)
+    {
+        if ($this->gteVersion(7)) {
+            $name = str_replace('\\', '_', $name) .
+            ($useExt && $name != '_versionedstage' ? '_str' : '');
+        }
+        return $name;
+    }
+
+    /**
      * @param string $name
      * @param Array $spec
      * @param Array $typeMap
@@ -426,6 +409,66 @@ abstract class SolrIndex extends SearchIndex
             $fieldParams,
             $analyzerXml ? "<analyzer>$analyzerXml</analyzer>" : null
         );
+    }
+
+    /**
+     * [getFieldDefinitions description]
+     * @return String [description]
+     */
+    public function getFieldDefinitions()
+    {
+        $xml = array();
+        $stored = $this->getStoredDefault();
+
+        $xml[] = "";
+
+        // Add the hardcoded field definitions
+        $xml[] = "<field name='_documentid' type='string' indexed='true' stored='true' required='true' />";
+        $xml[] = "<field name='ID' type='tint' indexed='true' stored='true' required='true' />";
+        $xml[] = "<field name='ClassName' type='string' indexed='true' stored='true' required='true' />";
+        $xml[] = "<field name='ClassHierarchy' type='string' indexed='true' stored='true' required='true' multiValued='true' />";
+
+        // Add the default field
+        $df = $this->getDefaultField();
+        $xml[] = "<field name='{$df}' type='htmltext' indexed='true' stored='{$stored}' multiValued='true' />" ;
+
+        // Add the user-specified fields
+        foreach ($this->fulltextFields as $name => $field) {
+
+            // will add fields with a _str extentension in Solr 7+
+            $xml[] = $this->getFieldDefinition(
+                $this->transformFieldName($name),
+                $field,
+                self::$fulltextTypeMap
+            );
+
+            // will add fields without a _str extentension in Solr 7+
+            // Solr will create these automatically,
+            // but we also need to set up copy fields linked to these
+            if ($this->gteVersion(7)) {
+                $xml[] = $this->getFieldDefinition(
+                    $this->transformFieldName($name, false),
+                    $field,
+                    self::$fulltextTypeMap
+                );
+            }
+        }
+
+        foreach ($this->filterFields as $name => $field) {
+            if ($field['fullfield'] == 'ID' || $field['fullfield'] == 'ClassName') {
+                continue;
+            }
+            $xml[] = $this->getFieldDefinition($this->transformFieldName($name), $field);
+        }
+
+        foreach ($this->sortFields as $name => $field) {
+            if ($field['fullfield'] == 'ID' || $field['fullfield'] == 'ClassName') {
+                continue;
+            }
+            $xml[] = $this->getFieldDefinition($this->transformFieldName($name), $field);
+        }
+
+        return implode("\n\t\t", $xml);
     }
 
     /**
@@ -477,7 +520,16 @@ abstract class SolrIndex extends SearchIndex
         // Default copy fields
         foreach ($this->getCopyDestinations() as $copyTo) {
             foreach ($this->fulltextFields as $name => $field) {
-                $xml[] = "<copyField source='{$name}' dest='{$copyTo}' />";
+
+                // create the copy field, we don't want the field name to have an extension
+                // otherwise it sets up a copy chain into the default field that never completes
+                $xml[] = "<copyField source='{$this->transformFieldName($name, false)}' dest='{$copyTo}' />";
+
+                // create the copy field from the non-suffixedto suffixed field
+                // solr does this automatically, but sets some strange restrictions
+                if ($this->gteVersion(7)) {
+                    $xml[] = "<copyField source='{$this->transformFieldName($name, false)}' dest='{$this->transformFieldName($name)}' />";
+                }
             }
         }
 
