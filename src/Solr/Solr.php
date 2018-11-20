@@ -76,7 +76,7 @@ class Solr
             'host' => 'localhost',
             'port' => 8983,
             'path' => '/solr',
-            'version' => '4'
+            'version' => '7'
         );
 
         // Build some by-version defaults
@@ -86,7 +86,13 @@ class Solr
         $module = ModuleLoader::getModule('silverstripe/fulltextsearch');
         $modulePath = $module->getPath();
 
-        if (version_compare($version, '4', '>=')) {
+        if (version_compare($version, '7', '>=')) {
+            $versionDefaults = [
+                'service'       => Solr7Service::class,
+                'extraspath'    => $modulePath . '/conf/solr/7/extras/',
+                'templatespath' => $modulePath . '/conf/solr/7/templates/',
+            ];
+        } else if (version_compare($version, '4', '>=')) {
             $versionDefaults = [
                 'service'       => Solr4Service::class,
                 'extraspath'    => $modulePath . '/conf/solr/4/extras/',

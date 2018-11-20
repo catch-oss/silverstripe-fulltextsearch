@@ -58,6 +58,8 @@ class Solr_Configure extends Solr_BuildTask
 
         // Then tell Solr to use those config files
         $service = Solr::service();
+
+
         if ($service->coreIsActive($index)) {
             $this->getLogger()->addInfo("Reloading core ...");
             $service->coreReload($index);
