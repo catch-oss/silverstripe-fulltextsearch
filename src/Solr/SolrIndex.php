@@ -523,12 +523,20 @@ abstract class SolrIndex extends SearchIndex
 
                 // create the copy field, we don't want the field name to have an extension
                 // otherwise it sets up a copy chain into the default field that never completes
-                $xml[] = "<copyField source='{$this->transformFieldName($name, false)}' dest='{$copyTo}' />";
+                $xml[] = "
+                    <copyField
+                        source='{$this->transformFieldName($name, false)}'
+                        dest='{$copyTo}' />
+                ";
 
-                // create the copy field from the non-suffixedto suffixed field
+                // create a copy field from the non-suffixed to the suffixed field
                 // solr does this automatically, but sets some strange restrictions
                 if ($this->gteVersion(7)) {
-                    $xml[] = "<copyField source='{$this->transformFieldName($name, false)}' dest='{$this->transformFieldName($name)}' />";
+                    $xml[] = "
+                        <copyField
+                            source='{$this->transformFieldName($name, false)}'
+                            dest='{$this->transformFieldName($name)}' />
+                    ";
                 }
             }
         }
