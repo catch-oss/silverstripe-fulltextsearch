@@ -1,0 +1,85 @@
+---
+name: fulltextsearchtestobjects
+---
+
+# for some reason the static manifest builder just doesn't collect this info and
+# everything goes bad when running tests e.g.
+# table_name is ignored and the table names get too long (>64)
+# None of the defined database fields exist
+
+SilverStripe\FullTextSearch\Tests\BatchedProcessorTest\BatchedProcessorTest_Object:
+  table_name: BatchedProcessorTest_Object
+  db:
+    TestText: Varchar
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_Container:
+  table_name: SearchUpdaterTest_Container
+  db:
+    Field1: Varchar
+    Field2: Varchar
+    MyDate: Date
+  has_one:
+    HasOneObject: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasOne
+  has_many:
+    HasManyObjects: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasMany
+  many_many:
+    ManyManyObjects: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ManyMany
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ExtendedContainer:
+  table_name: SearchUpdaterTest_ExtendedContainer
+  db:
+    SomeField: Varchar
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasMany:
+  table_name: SearchUpdaterTest_HasMany
+  db:
+    Field1: Varchar
+    Field2: Varchar
+  has_one:
+    HasManyContainer: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_Container
+    HasManyOtherContainer: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_OtherContainer
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasOne:
+  table_name: SearchUpdaterTest_HasOne
+  db:
+    Field1: Varchar
+    Field2: Varchar
+  has_many:
+    HasManyContainers: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_Container
+    HasManyOtherContainer: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_OtherContainer
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ManyMany:
+  table_name: SearchUpdaterTest_ManyMany
+  db:
+    Field1: Varchar
+    Field2: Varchar
+  belongs_many_many:
+    ManyManyContainer: SearchUpdaterTest_Container
+    ManyManyOtherContainer: SearchUpdaterTest_OtherContainer
+
+SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_OtherContainer:
+  table_name: SearchUpdaterTest_OtherContainer
+  has_many:
+    HasManyObjects: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasMany
+  many_many:
+    ManyManyObjects: SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ManyMany
+
+SilverStripe\FullTextSearch\Tests\SearchVariantVersionedTest\SearchVariantVersionedTest_Item:
+  table_name: SearchVariantVersionedTest_Item
+  db:
+    TestText: Varchar
+
+SilverStripe\FullTextSearch\Tests\SolrIndexVersionedTest\SolrIndexVersionedTest_Object:
+  table_name: SolrIndexVersionedTest_Object
+  extensions:
+    - SilverStripe\Versioned\Versioned
+  db:
+    Title: Varchar
+    Content: Text
+    TestText: Varchar
+
+SilverStripe\FullTextSearch\Tests\SolrReindexTest\SolrReindexTest_Item:
+  table_name: SolrReindexTest_Item
+  db:
+    Title: Varchar(255)
+    Variant: Int(0)
