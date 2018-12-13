@@ -30,7 +30,7 @@ class SearchUpdaterTest extends SapphireTest
         SearchUpdaterTest_HasOne::class,
         SearchUpdaterTest_ManyMany::class,
         SearchUpdaterTest_OtherContainer::class,
-    ]
+    ];
 
     protected function setUp()
     {
