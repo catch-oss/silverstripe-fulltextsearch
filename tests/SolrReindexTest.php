@@ -21,9 +21,9 @@ class SolrReindexTest extends SapphireTest
 {
     protected $usesDatabase = true;
 
-    protected static $extra_dataobjects = array(
+    protected static $extra_dataobjects = [
         SolrReindexTest_Item::class
-    );
+    ];
 
     /**
      * Forced index for testing

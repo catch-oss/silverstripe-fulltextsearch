@@ -22,9 +22,9 @@ class SearchVariantVersionedTest extends SapphireTest
      */
     private static $index = null;
 
-    protected static $extra_dataobjects = array(
+    protected static $extra_dataobjects = [
         SearchVariantVersionedTest_Item::class
-    );
+    ];
 
     protected function setUp()
     {

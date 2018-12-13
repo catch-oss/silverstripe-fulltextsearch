@@ -10,8 +10,11 @@ use SilverStripe\FullTextSearch\Search\Processors\SearchUpdateProcessor;
 use SilverStripe\FullTextSearch\Search\Processors\SearchUpdateImmediateProcessor;
 use SilverStripe\FullTextSearch\Search\Updaters\SearchUpdater;
 use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_Container;
-use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasOne;
+use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ExtendedContainer;
 use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasMany;
+use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_HasOne;
+use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_ManyMany;
+use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_OtherContainer;
 use SilverStripe\FullTextSearch\Tests\SearchUpdaterTest\SearchUpdaterTest_Index;
 
 class SearchUpdaterTest extends SapphireTest
@@ -19,6 +22,15 @@ class SearchUpdaterTest extends SapphireTest
     protected $usesDatabase = true;
 
     private static $index = null;
+
+    private static $extra_dataobjects =[
+        SearchUpdaterTest_Container::class,
+        SearchUpdaterTest_ExtendedContainer::class,
+        SearchUpdaterTest_HasMany::class,
+        SearchUpdaterTest_HasOne::class,
+        SearchUpdaterTest_ManyMany::class,
+        SearchUpdaterTest_OtherContainer::class,
+    ]
 
     protected function setUp()
     {
