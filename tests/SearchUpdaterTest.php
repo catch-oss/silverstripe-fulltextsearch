@@ -23,7 +23,7 @@ class SearchUpdaterTest extends SapphireTest
 
     private static $index = null;
 
-    private static $extra_dataobjects =[
+    protected static $extra_dataobjects =[
         SearchUpdaterTest_Container::class,
         SearchUpdaterTest_ExtendedContainer::class,
         SearchUpdaterTest_HasMany::class,
