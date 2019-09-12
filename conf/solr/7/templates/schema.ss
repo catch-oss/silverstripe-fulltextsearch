@@ -59,7 +59,7 @@
 
 	$CopyFieldDefinitions
 
-	<uniqueKey>_documentid</uniqueKey>
+	<uniqueKey>$UniqueKey</uniqueKey>
 
 	<df>$DefaultField</df>
 

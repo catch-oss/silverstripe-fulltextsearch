@@ -509,6 +509,16 @@ abstract class SolrIndex extends SearchIndex
     }
 
     /**
+     * Unique key for the index
+     *
+     * @return string
+     */
+    public function UniqueKey(): string
+    {
+        return '_documentid';
+    }
+
+    /**
      * Generate XML for copy field definitions
      *
      * @return string
