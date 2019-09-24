@@ -423,7 +423,7 @@ abstract class SolrIndex extends SearchIndex
         $xml[] = "";
 
         // Add the hardcoded field definitions
-        $xml[] = "<field name='_documentid' type='string' indexed='true' stored='true' required='true' />";
+        $xml[] = "<field name='" . $this->UniqueKey() . "' type='string' indexed='true' stored='true' required='true' />";
         $xml[] = "<field name='ID' type='tint' indexed='true' stored='true' required='true' />";
         $xml[] = "<field name='ClassName' type='string' indexed='true' stored='true' required='true' />";
         $xml[] = "<field name='ClassHierarchy' type='string' indexed='true' stored='true' required='true' multiValued='true' />";
@@ -640,7 +640,7 @@ abstract class SolrIndex extends SearchIndex
 
         // Always present fields
 
-        $doc->setField('_documentid', $this->getDocumentID($object, $base, $includeSubs));
+        $doc->setField($this->UniqueKey(), $this->getDocumentID($object, $base, $includeSubs));
         $doc->setField('ID', $object->ID);
         $doc->setField('ClassName', $object->ClassName);
 
@@ -851,7 +851,7 @@ abstract class SolrIndex extends SearchIndex
                     $results->push($result);
 
                     // Add highlighting (optional)
-                    $docId = $doc->_documentid;
+                    $docId = $doc->{$this->UniqueKey()};
                     if ($res->highlighting && $res->highlighting->$docId) {
                         // TODO Create decorator class for search results rather than adding arbitrary object properties
                         // TODO Allow specifying highlighted field, and lazy loading
