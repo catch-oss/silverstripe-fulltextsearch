@@ -102,6 +102,11 @@ abstract class SolrIndex extends SearchIndex
         return $this->renderWith($this->getTemplatesPath() . '/schema.ss');
     }
 
+    public function generateSolrconfig()
+    {
+        return $this->renderWith($this->getTemplatesPath() . '/solrconfig.ss');
+    }
+
     /**
      * Helper for returning the correct index name. Supports prefixing and
      * suffixing
@@ -409,6 +414,31 @@ abstract class SolrIndex extends SearchIndex
             $fieldParams,
             $analyzerXml ? "<analyzer>$analyzerXml</analyzer>" : null
         );
+    }
+    /**
+     *       An example dedup update processor that creates the "id" field
+     *       on the fly based on the hash code of some other fields.  This
+     *       example has overwriteDupes set to false since we are using the
+     *       id field as the signatureField and Solr will maintain
+     *       uniqueness based on that anyway.
+     *
+     *      <updateRequestProcessorChain name="dedupe">
+     *          <processor class="solr.processor.SignatureUpdateProcessorFactory">
+     *              <bool name="enabled">true</bool>
+     *              <str name="signatureField">id</str>
+     *              <bool name="overwriteDupes">false</bool>
+     *              <str name="fields">name,features,cat</str>
+     *              <str name="signatureClass">solr.processor.Lookup3Signature</str>
+     *          </processor>
+     *          <processor class="solr.LogUpdateProcessorFactory" />
+     *          <processor class="solr.RunUpdateProcessorFactory" />
+     *      </updateRequestProcessorChain>
+     *
+     * @return void
+     */
+    public function getDedupeDefinition(): string
+    {
+        return '';
     }
 
     /**
@@ -1150,6 +1180,13 @@ abstract class SolrIndex extends SearchIndex
             $this->getIndexName(),
             'schema.xml',
             (string)$this->generateSchema()
+        );
+
+        // Upload the config files for this index
+        $store->uploadString(
+            $this->getIndexName(),
+            'solrconfig.xml',
+            (string)$this->generateSolrconfig()
         );
 
         // Upload additional files

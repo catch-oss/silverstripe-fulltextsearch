@@ -1392,13 +1392,11 @@
   </updateRequestProcessorChain>
 
   <!-- Deduplication
-
        An example dedup update processor that creates the "id" field
        on the fly based on the hash code of some other fields.  This
        example has overwriteDupes set to false since we are using the
        id field as the signatureField and Solr will maintain
        uniqueness based on that anyway.
-
     -->
   <!--
      <updateRequestProcessorChain name="dedupe">
@@ -1413,6 +1411,7 @@
        <processor class="solr.RunUpdateProcessorFactory" />
      </updateRequestProcessorChain>
     -->
+  $DedupeDefinition
 
   <!-- Language identification
 
