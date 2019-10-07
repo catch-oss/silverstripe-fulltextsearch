@@ -1013,11 +1013,7 @@
          updateRequestProcessorChains that can be used by name
          on each Update Request
       -->
-    <!--
-       <lst name="defaults">
-         <str name="update.chain">dedupe</str>
-       </lst>
-       -->
+    $UpdateRequestHandler
   </requestHandler>
 
   <!-- for back compat with clients using /update/json and /update/csv -->

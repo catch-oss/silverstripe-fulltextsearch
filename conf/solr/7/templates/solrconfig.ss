@@ -918,6 +918,32 @@
     </lst>
   </initParams>
 
+ <!-- Update Request Handler.
+
+       http://wiki.apache.org/solr/UpdateXmlMessages
+
+       The canonical Request Handler for Modifying the Index through
+       commands specified using XML, JSON, CSV, or JAVABIN
+
+       Note: Since solr1.1 requestHandlers requires a valid content
+       type header if posted in the body. For example, curl now
+       requires: -H 'Content-type:text/xml; charset=utf-8'
+
+       To override the request content type and force a specific
+       Content-type, use the request parameter:
+         ?update.contentType=text/csv
+
+       This handler will pick a response format to match the input
+       if the 'wt' parameter is not explicit
+    -->
+  <requestHandler name="/update" class="solr.UpdateRequestHandler">
+    <!-- See below for information on defining
+         updateRequestProcessorChains that can be used by name
+         on each Update Request
+      -->
+    $UpdateRequestHandler
+  </requestHandler>
+
   <!-- Solr Cell Update Request Handler
 
        http://wiki.apache.org/solr/ExtractingRequestHandler
@@ -928,10 +954,15 @@
                   class="solr.extraction.ExtractingRequestHandler" >
     <lst name="defaults">
       <str name="lowernames">true</str>
-      <str name="fmap.meta">ignored_</str>
-      <str name="fmap.content">_text_</str>
+      <str name="uprefix">ignored_</str>
+
+      <!-- capture link hrefs but ignore div attributes -->
+      <str name="captureAttr">true</str>
+      <str name="fmap.a">links</str>
+      <str name="fmap.div">ignored_</str>
     </lst>
   </requestHandler>
+
 
   <!-- Search Components
 

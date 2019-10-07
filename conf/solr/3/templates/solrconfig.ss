@@ -855,12 +855,8 @@
          updateRequestProcessorChains that can be used by name
          on each Update Request
       -->
-    <!--
-       <lst name="defaults">
-         <str name="update.processor">dedupe</str>
-       </lst>
-       -->
-    </requestHandler>
+    $UpdateRequestHandler
+  </requestHandler>
   <!-- Binary Update Request Handler
        http://wiki.apache.org/solr/javabin
     -->

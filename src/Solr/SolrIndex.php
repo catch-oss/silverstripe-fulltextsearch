@@ -52,6 +52,7 @@ abstract class SolrIndex extends SearchIndex
         'FieldDefinitions' => 'HTMLText',
         'CopyFieldDefinitions' => 'HTMLText',
         'DedupeDefinition' => 'HTMLText',
+        'UpdateRequestHandler' => 'HTMLText',
     ];
 
     /**
@@ -416,6 +417,7 @@ abstract class SolrIndex extends SearchIndex
             $analyzerXml ? "<analyzer>$analyzerXml</analyzer>" : null
         );
     }
+
     /**
      *       An example dedup update processor that creates the "id" field
      *       on the fly based on the hash code of some other fields.  This
@@ -435,9 +437,23 @@ abstract class SolrIndex extends SearchIndex
      *          <processor class="solr.RunUpdateProcessorFactory" />
      *      </updateRequestProcessorChain>
      *
-     * @return void
+     * @return string
      */
     public function getDedupeDefinition(): string
+    {
+        return '';
+    }
+
+    /**
+     *      e.g.
+     *
+     *      <lst name="defaults">
+     *          <str name="update.chain">dedupe</str>
+     *      </lst>
+     *
+     * @return string
+     */
+    public function getUpdateRequestHandler(): string
     {
         return '';
     }
