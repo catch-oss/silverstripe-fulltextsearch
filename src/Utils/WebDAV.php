@@ -22,7 +22,8 @@ class WebDAV
         }
 
         $ch = self::curl_init($url, 'PROPFIND');
-        
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Depth: 1']);
+
         $res = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 

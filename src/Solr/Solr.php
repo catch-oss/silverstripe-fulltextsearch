@@ -76,7 +76,9 @@ class Solr
             'host' => 'localhost',
             'port' => 8983,
             'path' => '/solr',
-            'version' => '7'
+            'version' => '7',
+            'user' => '',
+            'pass' => ''
         );
 
         // Build some by-version defaults
@@ -131,10 +133,13 @@ class Solr
     {
         $options = self::solr_options();
 
+        $authStr = $options['user'] && $options['pass'] ? $options['user'] . ':' . $options['pass'] : '';
+        $host = $authStr ? $authStr . '@' . $options['host'] : $options['host'];
+
         if (!self::$service_singleton) {
             self::$service_singleton = Injector::inst()->create(
                 $options['service'],
-                $options['host'],
+                $host,
                 $options['port'],
                 $options['path']
             );

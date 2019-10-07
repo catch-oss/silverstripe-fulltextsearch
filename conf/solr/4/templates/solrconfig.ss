@@ -74,17 +74,17 @@
     -->
   <lib dir="./lib" />
 
-  <lib dir="../../../contrib/extraction/lib" regex=".*\.jar" />
-  <lib dir="../../../dist/" regex="solr-cell-\d.*\.jar" />
+  <lib dir="../../../contrib/extraction/lib" regex=".*\\.jar" />
+  <lib dir="../../../dist/" regex="solr-cell-\\d.*\\.jar" />
 
-  <lib dir="../../../contrib/clustering/lib/" regex=".*\.jar" />
-  <lib dir="../../../dist/" regex="solr-clustering-\d.*\.jar" />
+  <lib dir="../../../contrib/clustering/lib/" regex=".*\\.jar" />
+  <lib dir="../../../dist/" regex="solr-clustering-\\d.*\\.jar" />
 
-  <lib dir="../../../contrib/langid/lib/" regex=".*\.jar" />
-  <lib dir="../../../dist/" regex="solr-langid-\d.*\.jar" />
+  <lib dir="../../../contrib/langid/lib/" regex=".*\\.jar" />
+  <lib dir="../../../dist/" regex="solr-langid-\\d.*\\.jar" />
 
-  <lib dir="../../../contrib/velocity/lib" regex=".*\.jar" />
-  <lib dir="../../../dist/" regex="solr-velocity-\d.*\.jar" />
+  <lib dir="../../../contrib/velocity/lib" regex=".*\\.jar" />
+  <lib dir="../../../dist/" regex="solr-velocity-\\d.*\\.jar" />
 
   <!-- an exact 'path' can be used instead of a 'dir' to specify a
        specific jar file.  This will cause a serious error to be logged
@@ -1593,7 +1593,7 @@
           <!-- allow 50% slop on fragment sizes -->
           <float name="hl.regex.slop">0.5</float>
           <!-- a basic sentence pattern -->
-          <str name="hl.regex.pattern">[-\w ,/\n\&quot;&apos;]{20,200}</str>
+          <str name="hl.regex.pattern">[-\\w ,/\\n\\&quot;&apos;]{20,200}</str>
         </lst>
       </fragmenter>
 
