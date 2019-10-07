@@ -74,9 +74,9 @@
        files in that directory which completely match the regex
        (anchored on both ends) will be included.
     -->
-  <lib dir="../../dist/" regex="apache-solr-cell-\d.*\.jar" />
-  <lib dir="../../dist/" regex="apache-solr-clustering-\d.*\.jar" />
-  <lib dir="../../dist/" regex="apache-solr-dataimporthandler-\d.*\.jar" />
+  <lib dir="../../dist/" regex="apache-solr-cell-\\d.*\\.jar" />
+  <lib dir="../../dist/" regex="apache-solr-clustering-\\d.*\\.jar" />
+  <lib dir="../../dist/" regex="apache-solr-dataimporthandler-\\d.*\\.jar" />
 
   <!-- If a dir option (with or without a regex) is used and nothing
        is found that matches, it will be ignored
@@ -1348,7 +1348,7 @@
           <!-- allow 50% slop on fragment sizes -->
           <float name="hl.regex.slop">0.5</float>
           <!-- a basic sentence pattern -->
-          <str name="hl.regex.pattern">[-\w ,/\n\&quot;&apos;]{20,200}</str>
+          <str name="hl.regex.pattern">[-\\w ,/\\n\\&quot;&apos;]{20,200}</str>
         </lst>
       </fragmenter>
 
