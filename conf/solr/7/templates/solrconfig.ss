@@ -79,17 +79,17 @@
        with their external dependencies.
     -->
   <!--
-  <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-cell-\d.*\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/contrib/extraction/lib" regex=".*\\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-cell-\\d.*\\.jar" />
 
-  <lib dir="${solr.install.dir:../../../..}/contrib/clustering/lib/" regex=".*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-clustering-\d.*\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/contrib/clustering/lib/" regex=".*\\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-clustering-\\d.*\\.jar" />
 
-  <lib dir="${solr.install.dir:../../../..}/contrib/langid/lib/" regex=".*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-langid-\d.*\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/contrib/langid/lib/" regex=".*\\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-langid-\\d.*\\.jar" />
 
-  <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\.jar" />
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\d.*\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/contrib/velocity/lib" regex=".*\\.jar" />
+  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-velocity-\\d.*\\.jar" />
   -->
   <!-- an exact 'path' can be used instead of a 'dir' to specify a
        specific jar file.  This will cause a serious error to be logged
@@ -1220,7 +1220,7 @@
           <!-- allow 50% slop on fragment sizes -->
           <float name="hl.regex.slop">0.5</float>
           <!-- a basic sentence pattern -->
-          <str name="hl.regex.pattern">[-\w ,/\n\&quot;&apos;]{20,200}</str>
+          <str name="hl.regex.pattern">[-\\w ,/\\n\\&quot;&apos;]{20,200}</str>
         </lst>
       </fragmenter>
 
@@ -1326,7 +1326,7 @@
   <updateProcessor class="solr.UUIDUpdateProcessorFactory" name="uuid"/>
   <updateProcessor class="solr.RemoveBlankFieldUpdateProcessorFactory" name="remove-blank"/>
   <updateProcessor class="solr.FieldNameMutatingUpdateProcessorFactory" name="field-name-mutating">
-    <str name="pattern">[^\w-\.]</str>
+    <str name="pattern">[^\\w-\\.]</str>
     <str name="replacement">_</str>
   </updateProcessor>
   <updateProcessor class="solr.ParseBooleanFieldUpdateProcessorFactory" name="parse-boolean"/>

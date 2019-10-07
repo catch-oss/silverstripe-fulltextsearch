@@ -50,7 +50,8 @@ abstract class SolrIndex extends SearchIndex
 
     private static $casting = [
         'FieldDefinitions' => 'HTMLText',
-        'CopyFieldDefinitions' => 'HTMLText'
+        'CopyFieldDefinitions' => 'HTMLText',
+        'DedupeDefinition' => 'HTMLText',
     ];
 
     /**
@@ -876,9 +877,17 @@ abstract class SolrIndex extends SearchIndex
         $results = new ArrayList();
         if ($res->getHttpStatus() >= 200 && $res->getHttpStatus() < 300) {
             foreach ($res->response->docs as $doc) {
-                $result = DataObject::get_by_id($doc->ClassName, $doc->ID);
+                try {
+                    $result = DataObject::get_by_id($doc->ClassName, $doc->ID);
+                }
+                catch (\Exception $e) {
+                    $result = ('\\' . $doc->ClassName)::create();
+                }
                 if ($result) {
                     $results->push($result);
+
+                    // push the original solr doc into the result in case we needed
+                    $result->SolrDoc = $doc;
 
                     // Add highlighting (optional)
                     $docId = $doc->{$this->UniqueKey()};
@@ -912,10 +921,13 @@ abstract class SolrIndex extends SearchIndex
         $ret = array();
         $ret['Matches'] = new PaginatedList($results);
         $ret['Matches']->setLimitItems(false);
+
         // Tell PaginatedList how many results there are
         $ret['Matches']->setTotalItems($numFound);
+
         // Results for current page start at $offset
         $ret['Matches']->setPageStart($offset);
+
         // Results per page
         $ret['Matches']->setPageLength($limit);
 
