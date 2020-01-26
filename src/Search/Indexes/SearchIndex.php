@@ -92,6 +92,17 @@ abstract class SearchIndex extends ViewableData
         return 'Search Index ' . get_class($this);
     }
 
+    public static function get_full_field_name($name): ?string
+    {
+        $i = singleton(self);
+        $fs = array_keys($i->getFulltextFields());
+        foreach ($fs as $f) {
+            $frag = explode('_', $f)[1];
+            if ($frag == $name) return str_replace('\\', '_', $f);
+        }
+        return null;
+    }
+
     /**
      * Examines the classes this index is built on to try and find defined fields in the class hierarchy
      * for those classes.
