@@ -94,7 +94,7 @@ abstract class SearchIndex extends ViewableData
 
     public static function get_full_field_name($name): ?string
     {
-        $i = singleton(self);
+        $i = singleton(get_called_class());
         $fs = array_keys($i->getFulltextFields());
         foreach ($fs as $f) {
             $frag = explode('_', $f)[1];
