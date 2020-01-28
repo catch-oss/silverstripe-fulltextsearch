@@ -17,6 +17,7 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\PaginatedList;
 use SilverStripe\View\ArrayData;
+use SilverStripe\FullTextSearch\Search\Criteria\SearchCriterion;
 
 abstract class SolrIndex extends SearchIndex
 {
@@ -1139,8 +1140,19 @@ abstract class SolrIndex extends SearchIndex
             throw new \Exception('SearchQuery does not have a SearchAdapter applied');
         }
 
-        // Need to start with a positive conjunction.
-        $ps = $searchQuery->getAdapter()->getPrependToCriteriaComponent();
+        // if version is solr 7 and there is only one criteria and it's negative
+        // -> then we dont want to start with a positive conjunction
+        $dontPrepend = (
+            $this->gteVersion(7) &&
+            count($searchQuery->getCriteria()) == 1 &&
+            count($searchQuery->getCriteria()[0]->getClauses()) == 1 &&
+            $searchQuery->getCriteria()[0]->getClauses()[0]->getComparison() == SearchCriterion::NOT_IN
+        );
+
+        if (!$dontPrepend) {
+            // Need to start with a positive conjunction.
+            $ps = $searchQuery->getAdapter()->getPrependToCriteriaComponent();
+        }
 
         foreach ($searchQuery->getCriteria() as $clause) {
             $clause->setAdapter($searchQuery->getAdapter());

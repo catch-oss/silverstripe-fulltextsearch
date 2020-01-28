@@ -194,7 +194,7 @@ class SearchCriteria implements SearchCriteriaInterface
     /**
      * @return SearchCriteriaInterface[]
      */
-    protected function getClauses()
+    public function getClauses()
     {
         return $this->clauses;
     }
