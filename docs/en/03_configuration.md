@@ -112,12 +112,13 @@ Depending on the size of the index and how much content needs to be processed, i
 
 If the [Queued Jobs module](https://github.com/symbiote/silverstripe-queuedjobs/) is installed, updates are queued up instead of executed in the same request. Queued jobs are usually processed every minute. Large index updates will be batched into multiple queued jobs to ensure a job can run to completion within common constraints, such as memory and execution time limits. You can check the status of jobs in an administrative interface under `admin/queuedjobs/`.
 
-### Excluding draft content
+### Draft content
 
-By default, the `SearchUpdater` class indexes all available "variant states", so in the case of the `Versioned` extension, both "draft" and "live".
-For most cases, you'll want to exclude draft content from your search results.
+By default, the `SearchUpdater` class attempts to index all available "variant states", except for draft content.
+Draft content is excluded by default via calls to SearchableService::variantStateExcluded().
 
-You can either prevent the draft content from being indexed in the first place, by adding the following to your `SearchIndex::init()` method:
+Excluding draft content was a new default added in 3.7.0.  Prior to that, draft content was previously indexed by
+ default and could be excluded fron the index by adding the following to the `SearchIndex::init()` method:
 
 ```php
 use Page;
@@ -136,7 +137,10 @@ class MyIndex extends SolrIndex
 }
 ```
 
-Alternatively, you can index draft content, but simply exclude it from searches. This can be handy to preview search results on unpublished content, in case a CMS author is logged in. Before constructing your `SearchQuery`, conditionally switch to the "live" stage.
+If required, you can opt-out of the secure default and index draft content, but simply exclude it from searches.
+Read the inline documentation within SearchableService.php for more details on how to do this.
+This can be handy to preview search results on unpublished content, in case a CMS author is logged in.
+Before constructing your `SearchQuery`, conditionally switch to the "live" stage.
 
 ### Adding DataObjects
 
@@ -147,7 +151,7 @@ to render properly in the search results:
 * `Link()` needs to return the URL to follow from the search results to actually view the object.
 * `Name` (as a DB field) will be used as the result title.
 * `Abstract` (as a DB field) will show under the search result title.
-* `getShowInSearch()` is required to get the record to show in search, since all results are filtered by `ShowInSearch`.
+* `ShowInSearch` (as a DB field) or `getShowInSearch()` is recommended to allow the optional exclusion of DataObjects from being added to the search index.  If omitted, then all DataObjects of this type will be added to the search index.
 
 So with that, you can add your class to your index:
 
@@ -171,6 +175,28 @@ Once you've created the above classes and run the [solr dev tasks](#solr-dev-tas
 you've just created, this will add `SearchableDataObject` and the text fields it has to the index. Now when you search 
 on the site using `MySolrSearchIndex->search()`, the `SearchableDataObject` results will show alongside normal `Page`
 results.
+
+### ShowInSearch and getShowInSearch() filtering
+
+The fulltextsearch module checks the value of `ShowInSearch` on each object it operates against, and if this evaluates
+to `false`, the object is excluded from the index / results. You can implement a `getShowInSearch` method on your
+DataObject to control the way this is computed. This check happens in two places:
+
+a) When attempting to add the object to the search index (or update it)
+b) Before returning results from the search index. Note: this only applies to Solr 4 implementations.
+
+The second check is an additional layer to ensure that a result is excluded if the evaluated response changes between
+index and query time. For example, a getShowInSearch() implementation that filters out objects after a certain date
+might return `true` when the object is added to the index, but `false` when a user later performs a search.
+
+This filtering is applied to all Page (SiteTree) and File records since they have a ShowInSearch database column.
+This will also be applied to any DataObjects that have a ShowInSearch database column or a getShowInSearch() function.
+
+This is a compulsory check and there is no opt-out available.
+
+Note: If you implement a custom getShowInSearch() method on a Page, the database column 'ShowInSearch' will not be used
+and the 'Show In Search?' settings in the CMS admin found under Page > Settings will no longer work. Either incorporate
+the ShowInSearch column in your getShowInSearch() logic, or remove the field from the CMS to minimise confusion.
 
 ## Solr dev tasks
 

@@ -13,6 +13,7 @@ use SilverStripe\Dev\SapphireTest;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
 use SilverStripe\FullTextSearch\Search\Processors\SearchUpdateImmediateProcessor;
 use SilverStripe\FullTextSearch\Search\Processors\SearchUpdateProcessor;
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
 use SilverStripe\FullTextSearch\Search\Updaters\SearchUpdater;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariantSubsites;
 use SilverStripe\FullTextSearch\Solr\Services\Solr4Service;
@@ -36,7 +37,7 @@ class SolrIndexSubsitesTest extends SapphireTest
 
     protected $server = null;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         // Prevent parent::setUp() crashing on db build
         if (!class_exists(Subsite::class)) {
@@ -63,7 +64,7 @@ class SolrIndexSubsitesTest extends SapphireTest
         SearchUpdater::clear_dirty_indexes();
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         if ($this->server) {
             $_SERVER = $this->server;
@@ -107,6 +108,10 @@ class SolrIndexSubsitesTest extends SapphireTest
 
     public function testPublishing()
     {
+        $classesToSkip = [SiteTree::class, File::class];
+        Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
+        Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
+
         // Setup mocks
         $serviceMock = $this->getServiceMock();
         self::$index->setService($serviceMock);
@@ -216,6 +221,9 @@ class SolrIndexSubsitesTest extends SapphireTest
     public function testCorrectSubsiteIDOnFileWrite()
     {
         $subsiteIDs = ['0'] + $this->allFixtureIDs(Subsite::class);
+        $subsiteIDs = array_map(function ($v) {
+            return (string) $v;
+        }, $subsiteIDs ?? []);
         $mockWrites = [
             '35910:File:a:0:{}' => [
                 'base' => File::class,
@@ -245,10 +253,10 @@ class SolrIndexSubsitesTest extends SapphireTest
         $tmpMockWrites = $mockWrites;
         $variant->extractManipulationWriteState($tmpMockWrites);
         foreach ($tmpMockWrites as $mockWrite) {
-            $this->assertCount(count($subsiteIDs), $mockWrite['statefulids']);
+            $this->assertCount(count($subsiteIDs ?? []), $mockWrite['statefulids']);
             foreach ($mockWrite['statefulids'] as $statefulIDs) {
                 $this->assertContains(
-                    $statefulIDs['state'][SearchVariantSubsites::class],
+                    (string) $statefulIDs['state'][SearchVariantSubsites::class],
                     $subsiteIDs,
                     sprintf(
                         'Failed to assert that %s is in list of valid subsites: %s',

@@ -74,6 +74,9 @@
     -->
   <lib dir="./lib" />
 
+  <lib dir="../../../contrib/extraction/lib" regex=".*\.jar" />
+  <lib dir="../../../dist/" regex="solr-cell-\d.*\.jar" />
+
   <lib dir="../../../contrib/extraction/lib" regex=".*\\.jar" />
   <lib dir="../../../dist/" regex="solr-cell-\\d.*\\.jar" />
 

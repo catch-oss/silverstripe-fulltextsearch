@@ -4,6 +4,7 @@ namespace SilverStripe\FullTextSearch\Search\Variants;
 
 use ReflectionClass;
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Extensible;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\FullTextSearch\Search\Indexes\SearchIndex;
 use SilverStripe\FullTextSearch\Search\Queries\SearchQuery;
@@ -16,6 +17,7 @@ use SilverStripe\FullTextSearch\Utils\CombinationsArrayIterator;
 abstract class SearchVariant
 {
     use Configurable;
+    use Extensible;
 
     /**
      * Whether this variant is enabled
@@ -186,6 +188,11 @@ abstract class SearchVariant
         // Construct new array of variants applicable to at least one class in the list
         $commonVariants = [];
         foreach ($classes as $class => $options) {
+            // BC for numerically indexed list of classes
+            if (is_numeric($class) && !empty($options['class'])) {
+                $class = $options['class']; // $options['class'] is assumed to exist throughout the code base
+            }
+
             // Extract relevant class options
             $includeSubclasses = isset($options['include_children']) ? $options['include_children'] : true;
 
@@ -195,7 +202,7 @@ abstract class SearchVariant
             // Merge the variants applicable to the current class into the list of common variants, using
             // the variant instance to replace any previous versions for the same class name (should be singleton
             // anyway).
-            $commonVariants = array_replace($commonVariants, $variantsForClass);
+            $commonVariants = array_replace($commonVariants ?? [], $variantsForClass);
         }
 
         // Cache for future calls
@@ -315,7 +322,7 @@ abstract class SearchVariant
         $merged = array_values(array_unique(array_merge($left, $right)));
 
         // If there is only one item, return it as a single string
-        if (count($merged) === 1) {
+        if (count($merged ?? []) === 1) {
             return reset($merged);
         }
         return $merged;

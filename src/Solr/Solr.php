@@ -9,6 +9,8 @@ use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
 use SilverStripe\FullTextSearch\Solr\Services\Solr4Service;
 use SilverStripe\FullTextSearch\Solr\Services\Solr3Service;
+use SilverStripe\FullTextSearch\Solr\Services\SolrService;
+use SilverStripe\FullTextSearch\Solr\Services\SolrService_Core;
 
 class Solr
 {
@@ -32,13 +34,19 @@ class Solr
      *
      * indexstore => an array with
      *
-     *   mode - a classname which implements SolrConfigStore, or 'file' or 'webdav'
+     *   mode - a classname which implements SolrConfigStore, or 'file', 'webdav' or 'post'
      *
-     *   When mode == SolrConfigStore_File or file (indexes should be written on a local filesystem)
+     *   When mode == SolrConfigStore_File or 'file' (indexes should be written on a local filesystem)
      *      path - The (locally accessible) path to write the index configurations to.
      *      remotepath (default: the same as indexpath) - The path that the Solr server will read the index configurations from
      *
-     *   When mode == SolrConfigStore_WebDAV or webdav (indexes should stored on a remote Solr server via webdav)
+     *   When mode == SolrConfigStore_Post or 'post' (indexes should stored on a remote Solr server via post)
+     *   This mode will require custom software on the remote solr server which handles receiving the post and
+     *   passing on that information to solr. It is up to the user of this mode to write such software.
+     *      path (default: /solrindex) - The suburl on the solr host that is set up to accept index configurations
+     *      port (default: none) - The port on the remote server which is set up to receive the post information
+     *
+     *   When mode == SolrConfigStore_WebDAV or 'webdav' (indexes should stored on a remote Solr server via webdav)
      *      auth (default: none) - A username:password pair string to use to auth against the webdav server
      *      path (default: /solrindex) - The suburl on the solr host that is set up to accept index configurations via webdav
      *      port (default: none) - The port for WebDAV if different from the Solr port
@@ -88,13 +96,13 @@ class Solr
         $module = ModuleLoader::getModule('silverstripe/fulltextsearch');
         $modulePath = $module->getPath();
 
-        if (version_compare($version, '7', '>=')) {
+        if (version_compare($version ?? '', '7', '>=')) {
             $versionDefaults = [
                 'service'       => Solr7Service::class,
                 'extraspath'    => $modulePath . '/conf/solr/7/extras/',
                 'templatespath' => $modulePath . '/conf/solr/7/templates/',
             ];
-        } else if (version_compare($version, '4', '>=')) {
+        } else if (version_compare($version ?? '', '4', '>=')) {
             $versionDefaults = [
                 'service'       => Solr4Service::class,
                 'extraspath'    => $modulePath . '/conf/solr/4/extras/',
@@ -120,14 +128,14 @@ class Solr
 
     /** @var SolrService | null - The instance of SolrService for core management */
     protected static $service_singleton = null;
-    /** @var [SolrService_Core] - The instances of SolrService_Core for each core */
+    /** @var SolrService_Core[] - The instances of SolrService_Core for each core */
     protected static $service_core_singletons = array();
 
     /**
      * Get a SolrService
      *
      * @param string $core Optional name of index class
-     * @return SolrService_Core
+     * @return SolrService|SolrService_Core
      */
     public static function service($core = null)
     {
@@ -153,9 +161,8 @@ class Solr
             }
 
             return self::$service_core_singletons[$core];
-        } else {
-            return self::$service_singleton;
         }
+        return self::$service_singleton;
     }
 
     public static function get_indexes()

@@ -77,27 +77,26 @@ class SolrReindexImmediateHandler extends SolrReindexBase
         $indexClass = get_class($indexInstance);
 
         // Build script parameters
-        $indexClassEscaped = $indexClass;
         $statevar = json_encode($state);
-
-        if (strpos(PHP_OS, "WIN") !== false) {
-            $statevar = '"' . str_replace('"', '\\"', $statevar) . '"';
-        } else {
-            $statevar = "'" . $statevar . "'";
-            $class = addslashes($class);
-            $indexClassEscaped = addslashes($indexClass);
-        }
 
         $php = Environment::getEnv('SS_PHP_BIN') ?: Config::inst()->get(static::class, 'php_bin');
 
         // Build script line
         $frameworkPath = ModuleLoader::getModule('silverstripe/framework')->getPath();
         $scriptPath = sprintf("%s%scli-script.php", $frameworkPath, DIRECTORY_SEPARATOR);
-        $scriptTask = "{$php} {$scriptPath} dev/tasks/{$taskName}";
 
-        $cmd = "{$scriptTask} index={$indexClassEscaped} class={$class} group={$group} groups={$groups} variantstate={$statevar}";
-        $cmd .= " verbose=1";
-        $logger->info("Running '$cmd'");
+        $cmd = [
+            $php,
+            $scriptPath,
+            "dev/tasks/{$taskName}",
+            "index={$indexClass}",
+            "class={$class}",
+            "group={$group}",
+            "groups={$groups}",
+            "variantstate={$statevar}",
+            "verbose=1"
+        ];
+        $logger->info('Running ' . implode(' ', $cmd));
 
         // Execute script via shell
         $process = new Process($cmd);
@@ -110,7 +109,7 @@ class SolrReindexImmediateHandler extends SolrReindexBase
 
         $res = $process->getOutput();
         if ($logger) {
-            $logger->info(preg_replace('/\r\n|\n/', '$0  ', $res));
+            $logger->info(preg_replace('/\r\n|\n/', '$0  ', $res ?? ''));
         }
 
         // If we're in dev mode, commit more often for fun and profit

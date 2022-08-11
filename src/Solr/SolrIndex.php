@@ -6,12 +6,14 @@ use Exception;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Environment;
 use SilverStripe\FullTextSearch\Search\Indexes\SearchIndex;
-use SilverStripe\FullTextSearch\Search\Variants\SearchVariant_Caller;
-use SilverStripe\FullTextSearch\Solr\Services\SolrService;
 use SilverStripe\FullTextSearch\Search\Queries\SearchQuery;
 use SilverStripe\FullTextSearch\Search\Queries\SearchQuery_Range;
-use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
 use SilverStripe\FullTextSearch\Search\SearchIntrospection;
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
+use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
+use SilverStripe\FullTextSearch\Search\Variants\SearchVariant_Caller;
+use SilverStripe\FullTextSearch\Solr\Services\SolrService;
+use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore;
 use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
@@ -31,6 +33,9 @@ abstract class SolrIndex extends SearchIndex
         '*' => 'string',
         'Boolean' => 'boolean',
         'Date' => 'tdate',
+        'Datetime' => 'tdate',
+        'DBDate' => 'tdate',
+        'DBDatetime' => 'tdate',
         'SSDatetime' => 'tdate',
         'SS_Datetime' => 'tdate',
         'ForeignKey' => 'tint',
@@ -87,7 +92,7 @@ abstract class SolrIndex extends SearchIndex
     {
         $globalOptions = Solr::solr_options();
         $path = $this->templatesPath ? $this->templatesPath : $globalOptions['templatespath'];
-        return rtrim($path, '/');
+        return rtrim($path ?? '', '/');
     }
 
     /**
@@ -130,7 +135,7 @@ abstract class SolrIndex extends SearchIndex
             $indexParts[] = $indexSuffix;
         }
 
-        return implode($indexParts);
+        return implode($indexParts ?? '');
     }
 
     public function getTypes()
@@ -188,6 +193,51 @@ abstract class SolrIndex extends SearchIndex
         return array($df);
     }
 
+    // This came in with a merge
+    //
+    // public function getFieldDefinitions()
+    // {
+    //     $xml = array();
+    //     $stored = $this->getStoredDefault();
+
+    //     $xml[] = "";
+
+    //     // Add the hardcoded field definitions
+
+    //     $xml[] = "<field name='_documentid' type='string' indexed='true' stored='true' required='true' />";
+
+    //     $xml[] = "<field name='ID' type='tint' indexed='true' stored='true' required='true' />";
+    //     $xml[] = "<field name='ClassName' type='string' indexed='true' stored='true' required='true' />";
+    //     $xml[] = "<field name='ClassHierarchy' type='string' indexed='true' stored='true' required='true' multiValued='true' />";
+
+    //     // Add the fulltext collation field
+
+    //     $df = $this->getDefaultField();
+    //     $xml[] = "<field name='{$df}' type='htmltext' indexed='true' stored='true' multiValued='true' />" ;
+
+    //     // Add the user-specified fields
+
+    //     foreach ($this->fulltextFields as $name => $field) {
+    //         $xml[] = $this->getFieldDefinition($name, $field, self::$fulltextTypeMap);
+    //     }
+
+    //     foreach ($this->filterFields as $name => $field) {
+    //         if ($field['fullfield'] === 'ID' || $field['fullfield'] === 'ClassName') {
+    //             continue;
+    //         }
+    //         $xml[] = $this->getFieldDefinition($name, $field);
+    //     }
+
+    //     foreach ($this->sortFields as $name => $field) {
+    //         if ($field['fullfield'] === 'ID' || $field['fullfield'] === 'ClassName') {
+    //             continue;
+    //         }
+    //         $xml[] = $this->getFieldDefinition($name, $field);
+    //     }
+
+    //     return implode("\n\t\t", $xml);
+    // }
+
     /**
      * Extract first suggestion text from collated values
      *
@@ -216,11 +266,11 @@ abstract class SolrIndex extends SearchIndex
      */
     protected function getNiceSuggestion($collation = '')
     {
-        $collationParts = explode(' ', $collation);
+        $collationParts = explode(' ', $collation ?? '');
 
         // Remove advanced query params from the beginning of each collation part.
         foreach ($collationParts as $key => &$part) {
-            $part = ltrim($part, '+');
+            $part = ltrim($part ?? '', '+');
         }
 
         return implode(' ', $collationParts);
@@ -235,7 +285,7 @@ abstract class SolrIndex extends SearchIndex
      */
     protected function getSuggestionQueryString($collation = '')
     {
-        return str_replace(' ', '+', $this->getNiceSuggestion($collation));
+        return str_replace(' ', '+', $this->getNiceSuggestion($collation) ?? '');
     }
 
     /**
@@ -272,7 +322,7 @@ abstract class SolrIndex extends SearchIndex
     {
         // Ensure that 'boost' is recorded here without being captured by solr
         $boost = null;
-        if (array_key_exists('boost', $extraOptions)) {
+        if (array_key_exists('boost', $extraOptions ?? [])) {
             $boost = $extraOptions['boost'];
             unset($extraOptions['boost']);
         }
@@ -382,8 +432,8 @@ abstract class SolrIndex extends SearchIndex
 
     /**
      * @param string $name
-     * @param Array $spec
-     * @param Array $typeMap
+     * @param array $spec
+     * @param array $typeMap
      * @return String XML
      */
     protected function getFieldDefinition($name, $spec, $typeMap = null)
@@ -523,9 +573,9 @@ abstract class SolrIndex extends SearchIndex
      * Convert definition to XML tag
      *
      * @param string $tag
-     * @param string $attrs Map of attributes
+     * @param string[] $attrs Map of attributes
      * @param string $content Inner content
-     * @return String XML tag
+     * @return string XML tag
      */
     protected function toXmlTag($tag, $attrs, $content = null)
     {
@@ -628,7 +678,7 @@ abstract class SolrIndex extends SearchIndex
         }
 
         // Check single origin
-        return $class === $base || is_subclass_of($class, $base);
+        return $class === $base || is_subclass_of($class, $base ?? '');
     }
 
     protected function _addField($doc, $object, $field)
@@ -645,15 +695,15 @@ abstract class SolrIndex extends SearchIndex
         if (is_array($value)) {
             foreach ($value as $sub) {
                 /* Solr requires dates in the form 1995-12-31T23:59:59Z */
-                if ($type == 'tdate') {
+                if ($type === 'tdate') {
                     if (!$sub) {
                         continue;
                     }
-                    $sub = gmdate('Y-m-d\TH:i:s\Z', strtotime($sub));
+                    $sub = gmdate('Y-m-d\TH:i:s\Z', strtotime($sub ?? ''));
                 }
 
                 /* Solr requires numbers to be valid if presented, not just empty */
-                if (($type == 'tint' || $type == 'tfloat' || $type == 'tdouble') && !is_numeric($sub)) {
+                if (($type === 'tint' || $type === 'tfloat' || $type === 'tdouble') && !is_numeric($sub)) {
                     continue;
                 }
 
@@ -661,15 +711,15 @@ abstract class SolrIndex extends SearchIndex
             }
         } else {
             /* Solr requires dates in the form 1995-12-31T23:59:59Z */
-            if ($type == 'tdate') {
+            if ($type === 'tdate') {
                 if (!$value) {
                     return;
                 }
-                $value = gmdate('Y-m-d\TH:i:s\Z', strtotime($value));
+                $value = gmdate('Y-m-d\TH:i:s\Z', strtotime($value ?? ''));
             }
 
             /* Solr requires numbers to be valid if presented, not just empty */
-            if (($type == 'tint' || $type == 'tfloat' || $type == 'tdouble') && !is_numeric($value)) {
+            if (($type === 'tint' || $type === 'tfloat' || $type === 'tdouble') && !is_numeric($value)) {
                 return;
             }
 
@@ -699,7 +749,7 @@ abstract class SolrIndex extends SearchIndex
         // Add the user-specified fields
 
         foreach ($this->getFieldsIterator() as $name => $field) {
-            if ($field['base'] === $base || (is_array($field['base']) && in_array($base, $field['base']))) {
+            if ($field['base'] === $base || (is_array($field['base']) && in_array($base, $field['base'] ?? []))) {
                 $this->_addField($doc, $object, $field);
             }
         }
@@ -720,7 +770,7 @@ abstract class SolrIndex extends SearchIndex
         $docs = array();
 
         foreach ($this->getClasses() as $searchclass => $options) {
-            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass))) {
+            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass ?? ''))) {
                 $base = DataObject::getSchema()->baseDataClass($searchclass);
                 $docs[] = $this->_addAs($object, $base, $options);
             }
@@ -732,7 +782,7 @@ abstract class SolrIndex extends SearchIndex
     public function canAdd($class)
     {
         foreach ($this->classes as $searchclass => $options) {
-            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass))) {
+            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass ?? ''))) {
                 return true;
             }
         }
@@ -826,7 +876,7 @@ abstract class SolrIndex extends SearchIndex
 
         // If using boosting, set the clean term separately for highlighting.
         // See https://issues.apache.org/jira/browse/SOLR-2632
-        if (array_key_exists('hl', $params) && !array_key_exists('hl.q', $params)) {
+        if (array_key_exists('hl', $params ?? []) && !array_key_exists('hl.q', $params ?? [])) {
             $params['hl.q'] = implode(' ', $hlq);
         }
 
@@ -891,6 +941,8 @@ abstract class SolrIndex extends SearchIndex
             \Apache_Solr_Service::METHOD_POST
         );
 
+        $searchableService = SearchableService::singleton();
+
         $results = new ArrayList();
         if ($res->getHttpStatus() >= 200 && $res->getHttpStatus() < 300) {
             foreach ($res->response->docs as $doc) {
@@ -901,6 +953,10 @@ abstract class SolrIndex extends SearchIndex
                     $result = ('\\' . $doc->ClassName)::create();
                 }
                 if ($result) {
+                    if (!$searchableService->isViewable($result)) {
+                        continue;
+                    }
+
                     $results->push($result);
 
                     // push the original solr doc into the result in case we needed
@@ -988,7 +1044,7 @@ abstract class SolrIndex extends SearchIndex
      */
     protected function applySearchVariants(SearchQuery $query)
     {
-        $classes = count($query->classes) ? $query->classes : $this->getClasses();
+        $classes = count($query->classes ?? []) ? $query->classes : $this->getClasses();
 
         /** @var SearchVariant_Caller $variantCaller */
         $variantCaller = SearchVariant::withCommon($classes);
@@ -1004,7 +1060,7 @@ abstract class SolrIndex extends SearchIndex
      */
     public function sanitiseClassName($className, $replaceWith = '\\\\')
     {
-        return str_replace('\\', $replaceWith, $className);
+        return str_replace('\\', $replaceWith ?? '', $className ?? '');
     }
 
     /**
@@ -1019,14 +1075,14 @@ abstract class SolrIndex extends SearchIndex
         $q = array();
         foreach ($searchQuery->search as $search) {
             $text = $search['text'];
-            preg_match_all('/"[^"]*"|\S+/', $text, $parts);
+            preg_match_all('/"[^"]*"|\S+/', $text ?? '', $parts);
 
             $fuzzy = $search['fuzzy'] ? '~' : '';
 
             foreach ($parts[0] as $part) {
                 $fields = (isset($search['fields'])) ? $search['fields'] : array();
                 if (isset($search['boost'])) {
-                    $fields = array_merge($fields, array_keys($search['boost']));
+                    $fields = array_merge($fields, array_keys($search['boost'] ?? []));
                 }
                 if ($fields) {
                     $searchq = array();
@@ -1132,7 +1188,7 @@ abstract class SolrIndex extends SearchIndex
      */
     protected function getCriteriaComponent(SearchQuery $searchQuery)
     {
-        if (count($searchQuery->getCriteria()) === 0) {
+        if (count($searchQuery->getCriteria() ?? []) === 0) {
             return null;
         }
 
@@ -1231,7 +1287,7 @@ abstract class SolrIndex extends SearchIndex
 
         // Upload additional files
         foreach (glob($this->getExtrasPath() . '/*') as $file) {
-            if (is_file($file)) {
+            if (is_file($file ?? '')) {
                 $store->uploadFile($this->getIndexName(), $file);
             }
         }

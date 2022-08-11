@@ -4,6 +4,8 @@ namespace SilverStripe\FullTextSearch\Solr\Reindex\Handlers;
 
 use Psr\Log\LoggerInterface;
 use SilverStripe\Core\Environment;
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
+use SilverStripe\FullTextSearch\Search\Variants\SearchVariantVersioned;
 use SilverStripe\FullTextSearch\Solr\Solr;
 use SilverStripe\FullTextSearch\Solr\SolrIndex;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
@@ -11,6 +13,7 @@ use SilverStripe\FullTextSearch\Search\Queries\SearchQuery;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\DB;
+use SilverStripe\Versioned\Versioned;
 
 /**
  * Base class for re-indexing of solr content
@@ -40,6 +43,8 @@ abstract class SolrReindexBase implements SolrReindexHandler
         $taskName,
         $classes = null
     ) {
+        $searchableService = SearchableService::singleton();
+
         // Filter classes for this index
         $indexClasses = $this->getClassesForIndex($indexInstance, $classes);
 
@@ -52,7 +57,9 @@ abstract class SolrReindexBase implements SolrReindexHandler
             $includeSubclasses = $options['include_children'];
 
             foreach (SearchVariant::reindex_states($class, $includeSubclasses) as $state) {
-                $this->processVariant($logger, $indexInstance, $state, $class, $includeSubclasses, $batchSize, $taskName);
+                if (!$searchableService->variantStateExcluded($state)) {
+                    $this->processVariant($logger, $indexInstance, $state, $class, $includeSubclasses, $batchSize, $taskName);
+                }
             }
         }
     }
@@ -74,9 +81,9 @@ abstract class SolrReindexBase implements SolrReindexHandler
 
         // Apply filter
         if (!is_array($filterClasses)) {
-            $filterClasses = explode(',', $filterClasses);
+            $filterClasses = explode(',', $filterClasses ?? '');
         }
-        return array_intersect_key($classes, array_combine($filterClasses, $filterClasses));
+        return array_intersect_key($classes ?? [], array_combine($filterClasses ?? [], $filterClasses ?? []));
     }
 
     /**
@@ -99,6 +106,8 @@ abstract class SolrReindexBase implements SolrReindexHandler
         $batchSize,
         $taskName
     ) {
+        // Get current state
+        $originalState = SearchVariant::current_state();
         // Set state
         SearchVariant::activate_state($state);
 
@@ -122,6 +131,9 @@ abstract class SolrReindexBase implements SolrReindexHandler
         for ($group = 0; $group < $groups; $group++) {
             $this->processGroup($logger, $indexInstance, $state, $class, $groups, $group, $taskName);
         }
+
+        // Reset state to originalState
+        SearchVariant::activate_state($originalState);
     }
 
     /**
@@ -168,7 +180,11 @@ abstract class SolrReindexBase implements SolrReindexHandler
     ) {
         // Set time limit and state
         Environment::increaseTimeLimitTo();
+        // Get current state
+        $originalState = SearchVariant::current_state();
+        // Set state
         SearchVariant::activate_state($state);
+
         $logger->info("Adding $class");
 
         // Prior to adding these records to solr, delete existing solr records
@@ -186,6 +202,9 @@ abstract class SolrReindexBase implements SolrReindexHandler
             $item->destroy();
         }
         $logger->info("Updated " . implode(',', $processed));
+
+        // Reset state to originalState
+        SearchVariant::activate_state($originalState);
 
         // This will slow down things a tiny bit, but it is done so that we don't timeout to the database during a reindex
         DB::query('SELECT 1');
@@ -208,6 +227,7 @@ abstract class SolrReindexBase implements SolrReindexHandler
     {
         // Generate filtered list of local records
         $baseClass = DataObject::getSchema()->baseDataClass($class);
+        /** @var DataList $items */
         $items = DataList::create($class)
             ->where(sprintf(
                 '"%s"."ID" %% \'%d\' = \'%d\'',
@@ -224,6 +244,19 @@ abstract class SolrReindexBase implements SolrReindexHandler
             $items = $items->filter('ClassName', $class);
         }
 
+        $searchableService = SearchableService::singleton();
+
+        // Filter out objects that must not be indexed
+        $idsToRemove = [];
+        foreach ($items as $item) {
+            if (!$searchableService->isIndexable($item)) {
+                $idsToRemove[] = $item->ID;
+            }
+        }
+        if (!empty($idsToRemove)) {
+            sort($idsToRemove);
+            $items = $items->exclude(['ID' => $idsToRemove]);
+        }
         return $items;
     }
 

@@ -7,6 +7,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
 use SilverStripe\FullTextSearch\Tests\BatchedProcessorTest\BatchedProcessor_QueuedJobService;
 use SilverStripe\FullTextSearch\Tests\BatchedProcessorTest\BatchedProcessorTest_Index;
 use SilverStripe\FullTextSearch\Tests\BatchedProcessorTest\BatchedProcessorTest_Object;
@@ -41,7 +42,7 @@ class BatchedProcessorTest extends SapphireTest
         ],
     ];
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         // Disable illegal extensions if skipping this test
         if (class_exists(Subsite::class) || !interface_exists(QueuedJob::class)) {
@@ -50,7 +51,7 @@ class BatchedProcessorTest extends SapphireTest
         parent::setUpBeforeClass();
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -81,7 +82,7 @@ class BatchedProcessorTest extends SapphireTest
         SearchUpdater::$processor = new SearchUpdateQueuedJobProcessor();
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         if ($this->oldProcessor) {
             SearchUpdater::$processor = $this->oldProcessor;
@@ -105,7 +106,7 @@ class BatchedProcessorTest extends SapphireTest
             $processor->addDirtyIDs(
                 BatchedProcessorTest_Object::class,
                 array(array(
-                    'id' => $id,
+                    'id' => $object->ID,
                     'state' => array(SearchVariantVersioned::class => 'Stage')
                 )),
                 BatchedProcessorTest_Index::class
@@ -120,6 +121,9 @@ class BatchedProcessorTest extends SapphireTest
      */
     public function testBatching()
     {
+        Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', [SiteTree::class]);
+        Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
+
         $index = singleton(BatchedProcessorTest_Index::class);
         $index->reset();
         $processor = $this->generateDirtyIds();
@@ -129,28 +133,28 @@ class BatchedProcessorTest extends SapphireTest
         $this->assertEquals(9, $data->totalSteps);
         $this->assertEquals(0, $data->currentStep);
         $this->assertEmpty($data->isComplete);
-        $this->assertEquals(0, count($index->getAdded()));
+        $this->assertEquals(0, count($index->getAdded() ?? []));
 
         // Advance state
         for ($pass = 1; $pass <= 8; $pass++) {
             $processor->process();
             $data = $processor->getJobData();
             $this->assertEquals($pass, $data->currentStep);
-            $this->assertEquals($pass * 5, count($index->getAdded()));
+            $this->assertEquals($pass * 5, count($index->getAdded() ?? []));
         }
 
         // Last run should have two hanging items
         $processor->process();
         $data = $processor->getJobData();
         $this->assertEquals(9, $data->currentStep);
-        $this->assertEquals(42, count($index->getAdded()));
+        $this->assertEquals(42, count($index->getAdded() ?? []));
         $this->assertTrue($data->isComplete);
 
         // Check any additional queued jobs
         $processor->afterComplete();
         $service = singleton(QueuedJobService::class);
         $jobs = $service->getJobs();
-        $this->assertEquals(1, count($jobs));
+        $this->assertEquals(1, count($jobs ?? []));
         $this->assertInstanceOf(SearchUpdateCommitJobProcessor::class, $jobs[0]['job']);
     }
 
@@ -238,7 +242,7 @@ class BatchedProcessorTest extends SapphireTest
         }
         $data = $processor->getJobData();
         $this->assertEquals(8, $data->currentStep);
-        $this->assertEquals(42, count($index->getAdded()));
+        $this->assertEquals(42, count($index->getAdded() ?? []));
         $this->assertTrue($data->isComplete);
     }
 }

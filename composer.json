@@ -21,16 +21,19 @@
         }
     ],
     "require": {
-        "silverstripe/framework": "^4.0",
+        "php": "^7.4 || ^8.0",
+        "silverstripe/framework": "^4.10",
         "monolog/monolog": "~1.15",
-        "ptcinc/solr-php-client": "^1.0",
-        "symfony/process": "^3.2",
-        "tractorcow/silverstripe-proxy-db" : "~0.1"
+        "silverstripe/solr-php-client": "^1.0",
+        "symfony/process": "^3.4 || ^4",
+        "tractorcow/silverstripe-proxy-db": "^1",
+        "ext-curl": "*"
     },
     "require-dev": {
         "silverstripe/cms": "^4.0",
-        "phpunit/phpunit": "^5.7",
-        "squizlabs/php_codesniffer": "^3.0"
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.0",
+        "symbiote/silverstripe-queuedjobs": "^4.9"
     },
     "autoload": {
         "psr-4": {
@@ -45,6 +48,10 @@
         "branch-alias": {
             "dev-master": "4.x-dev"
         }
+    },
+    "scripts": {
+        "lint": "phpcs -s src/ tests/",
+        "lint-clean": "phpcbf src/ tests/"
     },
     "suggest": {
         "symbiote/silverstripe-queuedjobs": "Add background execution of indexing tasks",

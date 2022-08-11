@@ -13,15 +13,15 @@ class SolrConfigStore_File implements SolrConfigStore
     public function __construct($config)
     {
         $this->local = $config['path'];
-        $this->remote = isset($config['remotepath']) ? $config['remotepath'] : $config['path'];
+        $this->remote = !empty($config['remotepath']) ? $config['remotepath'] : $config['path'];
     }
 
     public function getTargetDir($index)
     {
         $targetDir = "{$this->local}/{$index}/conf";
 
-        if (!is_dir($targetDir)) {
-            $worked = @mkdir($targetDir, 0770, true);
+        if (!is_dir($targetDir ?? '')) {
+            $worked = @mkdir($targetDir ?? '', 0770, true);
 
             if (!$worked) {
                 throw new \RuntimeException(
@@ -36,7 +36,7 @@ class SolrConfigStore_File implements SolrConfigStore
     public function uploadFile($index, $file)
     {
         $targetDir = $this->getTargetDir($index);
-        copy($file, $targetDir . '/' . basename($file));
+        copy($file ?? '', $targetDir . '/' . basename($file ?? ''));
     }
 
     public function uploadString($index, $filename, $string)

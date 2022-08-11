@@ -6,12 +6,14 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
 use SilverStripe\FullTextSearch\Solr\Reindex\Handlers\SolrReindexHandler;
 use SilverStripe\FullTextSearch\Solr\Reindex\Handlers\SolrReindexQueuedHandler;
 use SilverStripe\FullTextSearch\Solr\Reindex\Jobs\SolrReindexGroupQueuedJob;
 use SilverStripe\FullTextSearch\Solr\Reindex\Jobs\SolrReindexQueuedJob;
 use SilverStripe\FullTextSearch\Solr\Services\Solr4Service;
 use SilverStripe\FullTextSearch\Solr\Services\SolrService;
+use SilverStripe\FullTextSearch\Tests\SearchVariantVersionedTest\SearchVariantVersionedTest_Item;
 use SilverStripe\FullTextSearch\Tests\SolrReindexQueuedTest\SolrReindexQueuedTest_Service;
 use SilverStripe\FullTextSearch\Tests\SolrReindexTest\SolrReindexTest_Index;
 use SilverStripe\FullTextSearch\Tests\SolrReindexTest\SolrReindexTest_Item;
@@ -44,13 +46,13 @@ class SolrReindexQueuedTest extends SapphireTest
      */
     protected $service = null;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
 
         if (!interface_exists(QueuedJob::class)) {
             $this->skipTest = true;
-            return $this->markTestSkipped("These tests need the QueuedJobs module installed to run");
+            $this->markTestSkipped("These tests need the QueuedJobs module installed to run");
         }
 
         // Set queued handler for reindex
@@ -104,7 +106,7 @@ class SolrReindexQueuedTest extends SapphireTest
         return $serviceMock;
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         FullTextSearch::force_index_list();
         SolrReindexTest_Variant::disable();
@@ -135,6 +137,9 @@ class SolrReindexQueuedTest extends SapphireTest
      */
     public function testReindexSegmentsGroups()
     {
+        $classesToSkip = [SolrReindexTest_Item::class];
+        Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
+
         $this->createDummyData(18);
 
         // Deletes are performed in the main task prior to individual groups being processed
@@ -194,6 +199,9 @@ class SolrReindexQueuedTest extends SapphireTest
      */
     public function testRunGroup()
     {
+        $classesToSkip = [SolrReindexTest_Item::class];
+        Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
+
         $this->createDummyData(18);
 
         // Just do what the SolrReindexQueuedJob would do to create each sub
@@ -225,9 +233,9 @@ class SolrReindexQueuedTest extends SapphireTest
 
         // Check IDs
         $idMessage = $logger->filterMessages('Updated ');
-        $this->assertNotEmpty(preg_match('/^Updated (?<ids>[,\d]+)/i', $idMessage[0], $matches));
-        $ids = array_unique(explode(',', $matches['ids']));
-        $this->assertEquals(6, count($ids));
+        $this->assertNotEmpty(preg_match('/^Updated (?<ids>[,\d]+)/i', $idMessage[0] ?? '', $matches));
+        $ids = array_unique(explode(',', $matches['ids'] ?? ''));
+        $this->assertEquals(6, count($ids ?? []));
         foreach ($ids as $id) {
             // Each id should be % 3 == 0
             $this->assertEquals(0, $id % 3, "ID $id Should match pattern ID % 3 = 0");
