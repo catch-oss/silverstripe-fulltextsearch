@@ -557,6 +557,7 @@ abstract class SolrIndex extends SearchIndex
                 continue;
             }
             $xml[] = $this->getFieldDefinition($this->transformFieldName($name), $field);
+            $xml[] = $this->getFieldDefinition($this->transformFieldName($name, false), $field);
         }
 
         foreach ($this->sortFields as $name => $field) {
@@ -564,7 +565,10 @@ abstract class SolrIndex extends SearchIndex
                 continue;
             }
             $xml[] = $this->getFieldDefinition($this->transformFieldName($name), $field);
+            $xml[] = $this->getFieldDefinition($this->transformFieldName($name, false), $field);
         }
+
+        $xml = array_unique($xml);
 
         return implode("\n\t\t", $xml);
     }
