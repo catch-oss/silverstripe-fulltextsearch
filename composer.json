@@ -44,11 +44,7 @@
     "bin": [
         "bin/fulltextsearch_quickstart"
     ],
-    "extra": {
-        "branch-alias": {
-            "dev-master": "4.x-dev"
-        }
-    },
+    "extra": {},
     "scripts": {
         "lint": "phpcs -s src/ tests/",
         "lint-clean": "phpcbf src/ tests/"
