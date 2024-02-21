@@ -23,7 +23,7 @@
     "require": {
         "php": ">8.0",
         "silverstripe/framework": "^5",
-        "monolog/monolog": "~1.15",
+        "monolog/monolog": "^3.2",
         "silverstripe/solr-php-client": "^1.0",
         "symfony/process": "^3.4 || ^4",
         "tractorcow/silverstripe-proxy-db": "^2",
