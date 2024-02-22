@@ -22,7 +22,7 @@
     ],
     "require": {
         "php": ">8.0",
-        "silverstripe/framework": "^5",
+        "silverstripe/framework": "^5.1",
         "monolog/monolog": "^3.2",
         "silverstripe/solr-php-client": "^1.0",
         "symfony/process": "^4.4",
@@ -30,7 +30,7 @@
         "ext-curl": "*"
     },
     "require-dev": {
-        "silverstripe/cms": "^5",
+        "silverstripe/cms": "^5.1",
         "phpunit/phpunit": "^9.5",
         "symbiote/silverstripe-queuedjobs": "^5.0@stable"
     },
