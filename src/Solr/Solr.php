@@ -9,6 +9,7 @@ use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
 use SilverStripe\FullTextSearch\Solr\Services\Solr4Service;
 use SilverStripe\FullTextSearch\Solr\Services\Solr3Service;
+use SilverStripe\FullTextSearch\Solr\Services\Solr7Service;
 use SilverStripe\FullTextSearch\Solr\Services\SolrService;
 use SilverStripe\FullTextSearch\Solr\Services\SolrService_Core;
 
