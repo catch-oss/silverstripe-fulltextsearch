@@ -111,7 +111,7 @@ abstract class SearchIndex extends ViewableData
      * Note that only classes that have the relations uninherited (defined in them) will be listed
      * this is because inherited relations do not need to be processed by index explicitly
      */
-    public function fieldData($field, $forceType = null, $extraOptions = [])
+    public function fieldData($field, ?string $forceType = null, array $extraOptions = [])
     {
         $fullfield = str_replace(".", "_", $field ?? '');
         $sources = $this->getClasses();
@@ -315,7 +315,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addFulltextField($field, $forceType = null, $extraOptions = array())
+    public function addFulltextField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->fulltextFields = array_merge($this->fulltextFields, $this->fieldData($field, $forceType, $extraOptions));
     }
@@ -331,7 +331,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addFilterField($field, $forceType = null, $extraOptions = array())
+    public function addFilterField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->filterFields = array_merge($this->filterFields, $this->fieldData($field, $forceType, $extraOptions));
     }
@@ -347,7 +347,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addSortField($field, $forceType = null, $extraOptions = array())
+    public function addSortField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->sortFields = array_merge($this->sortFields, $this->fieldData($field, $forceType, $extraOptions));
     }

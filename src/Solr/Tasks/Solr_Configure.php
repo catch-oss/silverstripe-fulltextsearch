@@ -102,6 +102,6 @@ class Solr_Configure extends Solr_BuildTask
         if (ClassInfo::exists($mode) && ClassInfo::classImplements($mode, SolrConfigStore::class)) {
             return new $mode($indexstore);
         }
-        user_error('Unknown Solr index mode ' . $indexstore['mode'], E_USER_ERROR);
+        trigger_error('Unknown Solr index mode ' . $indexstore['mode'], E_USER_ERROR);
     }
 }

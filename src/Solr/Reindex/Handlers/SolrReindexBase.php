@@ -20,7 +20,7 @@ use SilverStripe\Versioned\Versioned;
  */
 abstract class SolrReindexBase implements SolrReindexHandler
 {
-    public function runReindex(LoggerInterface $logger, $batchSize, $taskName, $classes = null)
+    public function runReindex(LoggerInterface $logger, $batchSize, $taskName, array|string|null $classes = null)
     {
         foreach (Solr::get_indexes() as $indexInstance) {
             $this->processIndex($logger, $indexInstance, $batchSize, $taskName, $classes);
@@ -41,7 +41,7 @@ abstract class SolrReindexBase implements SolrReindexHandler
         SolrIndex $indexInstance,
         $batchSize,
         $taskName,
-        $classes = null
+        array|string|null $classes = null
     ) {
         $searchableService = SearchableService::singleton();
 
@@ -71,7 +71,7 @@ abstract class SolrReindexBase implements SolrReindexHandler
      * @param string|array $filterClasses Optional class or classes to limit to
      * @return array List of classes, where the key is the classname and value is list of options
      */
-    protected function getClassesForIndex(SolrIndex $index, $filterClasses = null)
+    protected function getClassesForIndex(SolrIndex $index, array|string|null $filterClasses = null)
     {
         // Get base classes
         $classes = $index->getClasses();
@@ -270,7 +270,7 @@ abstract class SolrReindexBase implements SolrReindexHandler
      * @param int $groups Number of groups, if clearing from a striped group
      * @param int $group Group number, if clearing from a striped group
      */
-    protected function clearRecords(SolrIndex $indexInstance, $class, $groups = null, $group = null)
+    protected function clearRecords(SolrIndex $indexInstance, $class, ?int $groups = null, ?int $group = null)
     {
         // Clear by classname
         $conditions = array("+(ClassHierarchy:{$class})");

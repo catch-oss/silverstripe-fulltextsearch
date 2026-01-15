@@ -54,7 +54,7 @@ class SolrReindexGroupQueuedJob extends SolrReindexQueuedJobBase
      */
     protected $group;
 
-    public function __construct($indexName = null, $state = null, $class = null, $groups = null, $group = null)
+    public function __construct(?string $indexName = null, ?array $state = null, ?string $class = null, ?int $groups = null, ?int $group = null)
     {
         parent::__construct();
         $this->indexName = $indexName;

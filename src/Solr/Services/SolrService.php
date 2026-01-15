@@ -54,7 +54,7 @@ class SolrService extends SolrService_Core
      * @param string $datadir The path to store data for this core on the server. Default depends on solrconfig.xml
      * @return Apache_Solr_Response
      */
-    public function coreCreate($core, $instancedir, $config = null, $schema = null, $datadir = null)
+    public function coreCreate($core, $instancedir, ?string $config = null, ?string $schema = null, ?string $datadir = null)
     {
         $args = array('instanceDir' => $instancedir);
         if ($config) {

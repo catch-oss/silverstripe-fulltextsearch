@@ -16,7 +16,7 @@ class SearchQuery_Range
     public $start = null;
     public $end = null;
 
-    public function __construct($start = null, $end = null)
+    public function __construct(mixed $start = null, mixed $end = null)
     {
         $this->start = $start;
         $this->end = $end;

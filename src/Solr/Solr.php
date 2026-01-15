@@ -123,7 +123,7 @@ class Solr
 
     public static function set_service_class($class)
     {
-        user_error('set_service_class is deprecated - pass as part of $options to configure_server', E_USER_WARNING);
+        trigger_error('set_service_class is deprecated - pass as part of $options to configure_server', E_USER_WARNING);
         self::configure_server(array('service' => $class));
     }
 

@@ -296,7 +296,7 @@ abstract class SolrIndex extends SearchIndex
      * detectable from metadata)
      * @param array $extraOptions Dependent on search implementation
      */
-    public function addStoredField($field, $forceType = null, $extraOptions = array())
+    public function addStoredField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $options = array_merge($extraOptions, array('stored' => 'true'));
         $this->addFulltextField($field, $forceType, $options);
@@ -311,14 +311,14 @@ abstract class SolrIndex extends SearchIndex
      * @param array $extraOptions Dependent on search implementation
      * @param float $boost Numeric boosting value (defaults to 2)
      */
-    public function addBoostedField($field, $forceType = null, $extraOptions = array(), $boost = 2)
+    public function addBoostedField($field, ?string $forceType = null, array $extraOptions = [], $boost = 2)
     {
         $options = array_merge($extraOptions, array('boost' => $boost));
         $this->addFulltextField($field, $forceType, $options);
     }
 
 
-    public function fieldData($field, $forceType = null, $extraOptions = array())
+    public function fieldData($field, ?string $forceType = null, array $extraOptions = [])
     {
         // Ensure that 'boost' is recorded here without being captured by solr
         $boost = null;
@@ -436,7 +436,7 @@ abstract class SolrIndex extends SearchIndex
      * @param array $typeMap
      * @return String XML
      */
-    protected function getFieldDefinition($name, $spec, $typeMap = null)
+    protected function getFieldDefinition($name, $spec, ?array $typeMap = null)
     {
         if (!$typeMap) {
             $typeMap = self::$filterTypeMap;
@@ -581,7 +581,7 @@ abstract class SolrIndex extends SearchIndex
      * @param string $content Inner content
      * @return string XML tag
      */
-    protected function toXmlTag($tag, $attrs, $content = null)
+    protected function toXmlTag($tag, $attrs, ?string $content = null)
     {
         $xml = "<$tag ";
         if ($attrs) {

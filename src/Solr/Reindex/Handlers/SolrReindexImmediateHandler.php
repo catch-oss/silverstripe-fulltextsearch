@@ -31,7 +31,7 @@ class SolrReindexImmediateHandler extends SolrReindexBase
     private static $php_bin = 'php';
 
 
-    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, $classes = null)
+    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, array|string|null $classes = null)
     {
         $this->runReindex($logger, $batchSize, $taskName, $classes);
     }
@@ -41,7 +41,7 @@ class SolrReindexImmediateHandler extends SolrReindexBase
         SolrIndex $indexInstance,
         $batchSize,
         $taskName,
-        $classes = null
+        array|string|null $classes = null
     ) {
         parent::processIndex($logger, $indexInstance, $batchSize, $taskName, $classes);
 
