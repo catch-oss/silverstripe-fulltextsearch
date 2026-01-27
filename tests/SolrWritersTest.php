@@ -117,11 +117,9 @@ class SolrWritersTest extends SapphireTest
         $this->assertEquals(' OR ', $adapter->getConjunctionFor(SearchCriteria::CONJUNCTION_OR));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testConjunctionFailure()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $adapter = new SolrSearchAdapter();
         $adapter->getConjunctionFor('FAIL');
     }
@@ -187,7 +185,7 @@ class SolrWritersTest extends SapphireTest
 
         $index = new SolrIndexTest_FakeIndex();
 
-        $this->assertTrue(in_array($expected, $index->getFiltersComponent($query)));
+        $this->assertTrue(in_array($expected, $index->getFiltersComponent($query) ?? []));
     }
 
     /**
@@ -237,6 +235,6 @@ class SolrWritersTest extends SapphireTest
 
         $index = new SolrIndexTest_FakeIndex();
 
-        $this->assertTrue(in_array($expected, $index->getFiltersComponent($query)));
+        $this->assertTrue(in_array($expected, $index->getFiltersComponent($query) ?? []));
     }
 }

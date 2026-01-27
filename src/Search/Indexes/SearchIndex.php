@@ -70,7 +70,7 @@ abstract class SearchIndex extends ViewableData
      */
     protected function getSourceName($source)
     {
-        $source = explode(self::config()->get('class_delimiter'), $source);
+        $source = explode(self::config()->get('class_delimiter') ?? '', $source ?? '');
 
         return $source[0];
     }
@@ -92,6 +92,17 @@ abstract class SearchIndex extends ViewableData
         return 'Search Index ' . get_class($this);
     }
 
+    public static function get_full_field_name($name): ?string
+    {
+        $i = singleton(get_called_class());
+        $fs = array_keys($i->getFulltextFields());
+        foreach ($fs as $f) {
+            $frag = explode('_', $f)[1];
+            if ($frag == $name) return str_replace('\\', '_', $f);
+        }
+        return null;
+    }
+
     /**
      * Examines the classes this index is built on to try and find defined fields in the class hierarchy
      * for those classes.
@@ -100,9 +111,9 @@ abstract class SearchIndex extends ViewableData
      * Note that only classes that have the relations uninherited (defined in them) will be listed
      * this is because inherited relations do not need to be processed by index explicitly
      */
-    public function fieldData($field, $forceType = null, $extraOptions = [])
+    public function fieldData($field, ?string $forceType = null, array $extraOptions = [])
     {
-        $fullfield = str_replace(".", "_", $field);
+        $fullfield = str_replace(".", "_", $field ?? '');
         $sources = $this->getClasses();
 
         foreach ($sources as $source => $options) {
@@ -112,8 +123,8 @@ abstract class SearchIndex extends ViewableData
 
         $found = [];
 
-        if (strpos($field, '.') !== false) {
-            $lookups = explode(".", $field);
+        if (strpos($field ?? '', '.') !== false) {
+            $lookups = explode(".", $field ?? '');
             $field = array_pop($lookups);
 
             foreach ($lookups as $lookup) {
@@ -133,7 +144,7 @@ abstract class SearchIndex extends ViewableData
                             // we only want to include base class for relation, omit classes that inherited the relation
                             $relationList = Config::inst()->get($dataclass, 'has_one', Config::UNINHERITED);
                             $relationList = (!is_null($relationList)) ? $relationList : [];
-                            if (!array_key_exists($lookup, $relationList)) {
+                            if (!array_key_exists($lookup, $relationList ?? [])) {
                                 continue;
                             }
 
@@ -146,7 +157,7 @@ abstract class SearchIndex extends ViewableData
                             // we only want to include base class for relation, omit classes that inherited the relation
                             $relationList = Config::inst()->get($dataclass, 'has_many', Config::UNINHERITED);
                             $relationList = (!is_null($relationList)) ? $relationList : [];
-                            if (!array_key_exists($lookup, $relationList)) {
+                            if (!array_key_exists($lookup, $relationList ?? [])) {
                                 continue;
                             }
 
@@ -160,7 +171,7 @@ abstract class SearchIndex extends ViewableData
                             // we only want to include base class for relation, omit classes that inherited the relation
                             $relationList = Config::inst()->get($dataclass, 'many_many', Config::UNINHERITED);
                             $relationList = (!is_null($relationList)) ? $relationList : [];
-                            if (!array_key_exists($lookup, $relationList)) {
+                            if (!array_key_exists($lookup, $relationList ?? [])) {
                                 continue;
                             }
 
@@ -199,7 +210,7 @@ abstract class SearchIndex extends ViewableData
             $class = $this->getSourceName($class);
             $dataclasses = SearchIntrospection::hierarchy($class, $options['include_children']);
 
-            while (count($dataclasses)) {
+            while (count($dataclasses ?? [])) {
                 $dataclass = array_shift($dataclasses);
                 $type = null;
                 $fieldoptions = $options;
@@ -228,9 +239,9 @@ abstract class SearchIndex extends ViewableData
 
                 if ($type) {
                     // Don't search through child classes of a class we matched on. TODO: Should we?
-                    $dataclasses = array_diff($dataclasses, array_values(ClassInfo::subclassesFor($dataclass)));
+                    $dataclasses = array_diff($dataclasses ?? [], array_values(ClassInfo::subclassesFor($dataclass) ?? []));
                     // Trim arguments off the type string
-                    if (preg_match('/^(\w+)\(/', $type, $match)) {
+                    if (preg_match('/^(\w+)\(/', $type ?? '', $match)) {
                         $type = $match[1];
                     }
                     // Get the origin
@@ -304,7 +315,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addFulltextField($field, $forceType = null, $extraOptions = array())
+    public function addFulltextField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->fulltextFields = array_merge($this->fulltextFields, $this->fieldData($field, $forceType, $extraOptions));
     }
@@ -320,7 +331,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addFilterField($field, $forceType = null, $extraOptions = array())
+    public function addFilterField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->filterFields = array_merge($this->filterFields, $this->fieldData($field, $forceType, $extraOptions));
     }
@@ -336,7 +347,7 @@ abstract class SearchIndex extends ViewableData
      * @param string $forceType - The type to force this field as (required in some cases, when not detectable from metadata)
      * @param string $extraOptions - Dependent on search implementation
      */
-    public function addSortField($field, $forceType = null, $extraOptions = array())
+    public function addSortField($field, ?string $forceType = null, array $extraOptions = [])
     {
         $this->sortFields = array_merge($this->sortFields, $this->fieldData($field, $forceType, $extraOptions));
     }
@@ -412,7 +423,7 @@ abstract class SearchIndex extends ViewableData
 
     public function buildDependancyList()
     {
-        $this->dependancyList = array_keys($this->getClasses());
+        $this->dependancyList = array_keys($this->getClasses() ?? []);
 
         foreach ($this->getFieldsIterator() as $name => $field) {
             if (!isset($field['class'])) {
@@ -434,7 +445,7 @@ abstract class SearchIndex extends ViewableData
             $this->derivedFields = array();
 
             foreach ($this->getFieldsIterator() as $name => $field) {
-                if (count($field['lookup_chain']) < 2) {
+                if (count($field['lookup_chain'] ?? []) < 2) {
                     continue;
                 }
 
@@ -445,7 +456,7 @@ abstract class SearchIndex extends ViewableData
                     $this->derivedFields[$key]['fields'][$fieldname] = $fieldname;
                     SearchIntrospection::add_unique_by_ancestor($this->derivedFields['classes'], $field['class']);
                 } else {
-                    $chain = array_reverse($field['lookup_chain']);
+                    $chain = array_reverse($field['lookup_chain'] ?? []);
                     array_shift($chain);
 
                     $this->derivedFields[$key] = array(
@@ -473,7 +484,7 @@ abstract class SearchIndex extends ViewableData
     {
         ksort($state);
         $parts = array('id' => $id, 'base' => $base, 'state' => json_encode($state));
-        return implode('-', array_values($parts));
+        return implode('-', array_values($parts ?? []));
     }
 
     /**
@@ -501,7 +512,7 @@ abstract class SearchIndex extends ViewableData
         $errorHandler = function ($no, $str) {
             throw new Exception('HTML Parse Error: ' . $str);
         };
-        set_error_handler($errorHandler, E_ALL);
+        set_error_handler($errorHandler, E_ALL & ~(E_DEPRECATED | E_USER_DEPRECATED));
 
         try {
             foreach ($field['lookup_chain'] as $step) {
@@ -586,7 +597,7 @@ abstract class SearchIndex extends ViewableData
 
         // First, if this object is directly contained in the index, add it
         foreach ($this->classes as $searchclass => $options) {
-            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass))) {
+            if ($searchclass == $class || ($options['include_children'] && is_subclass_of($class, $searchclass ?? ''))) {
                 $base = DataObject::getSchema()->baseDataClass($searchclass);
                 $dirty[$base] = array();
                 foreach ($statefulids as $statefulid) {
@@ -605,7 +616,7 @@ abstract class SearchIndex extends ViewableData
             if (!SearchIntrospection::is_subclass_of($class, $derivation['classes'])) {
                 continue;
             }
-            if (!array_intersect_key($fields, $derivation['fields'])) {
+            if (!array_intersect_key($fields ?? [], $derivation['fields'])) {
                 continue;
             }
 
@@ -615,23 +626,15 @@ abstract class SearchIndex extends ViewableData
                 $ids = array($id);
 
                 foreach ($derivation['chain'] as $step) {
-                    // Use TableName for queries
-                    $tableName = DataObject::getSchema()->tableName($step['class']);
-
                     if ($step['through'] == 'has_one') {
-                        $sql = new SQLSelect('"ID"', '"' . $tableName . '"', '"' . $step['foreignkey'] . '" IN (' . implode(',', $ids) . ')');
-                        singleton($step['class'])->extend('augmentSQL', $sql);
-
-                        $ids = $sql->execute()->column();
+                        $ids = DataObject::get($step['class'])
+                            ->filter($step['foreignkey'], $ids)
+                            ->column('ID');
                     } elseif ($step['through'] == 'has_many') {
-                        // Use TableName for queries
-                        $otherTableName = DataObject::getSchema()->tableName($step['otherclass']);
-
-                        $sql = new SQLSelect('"' . $tableName . '"."ID"', '"' . $tableName . '"', '"' . $otherTableName . '"."ID" IN (' . implode(',', $ids) . ')');
-                        $sql->addInnerJoin($otherTableName, '"' . $tableName . '"."ID" = "' . $otherTableName . '"."' . $step['foreignkey'] . '"');
-                        singleton($step['class'])->extend('augmentSQL', $sql);
-
-                        $ids = $sql->execute()->column();
+                        // foreignkey identifies a has_one column on the model linked via the has_many relation
+                        $ids = DataObject::get($step['otherclass'])
+                            ->filter('ID', $ids)
+                            ->column($step['foreignkey']);
                     }
 
                     if (empty($ids)) {

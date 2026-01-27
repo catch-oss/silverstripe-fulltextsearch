@@ -78,7 +78,7 @@ class SearchQuery extends ViewableData
      *                       the more important the field gets for relevancy.
      * @return $this
      */
-    public function addSearchTerm($text, $fields = null, $boost = [])
+    public function addSearchTerm($text, array|string|null $fields = null, $boost = [])
     {
         $this->search[] = [
             'text' => $text,
@@ -99,7 +99,7 @@ class SearchQuery extends ViewableData
      * @param array  $boost  See {@link addSearchTerm()}
      * @return $this
      */
-    public function addFuzzySearchTerm($text, $fields = null, $boost = [])
+    public function addFuzzySearchTerm($text, array|string|null $fields = null, $boost = [])
     {
         $this->search[] = [
             'text' => $text,
@@ -286,7 +286,7 @@ class SearchQuery extends ViewableData
      * @codeCoverageIgnore
      * @deprecated
      */
-    public function search($text, $fields = null, $boost = [])
+    public function search($text, array|string|null $fields = null, $boost = [])
     {
         Deprecation::notice('4.0', 'Use addSearchTerm() instead');
         return $this->addSearchTerm($text, $fields, $boost);
@@ -296,7 +296,7 @@ class SearchQuery extends ViewableData
      * @codeCoverageIgnore
      * @deprecated
      */
-    public function fuzzysearch($text, $fields = null, $boost = [])
+    public function fuzzysearch($text, array|string|null $fields = null, $boost = [])
     {
         Deprecation::notice('4.0', 'Use addFuzzySearchTerm() instead');
         return $this->addFuzzySearchTerm($text, $fields, $boost);

@@ -194,7 +194,7 @@ class SearchCriteria implements SearchCriteriaInterface
     /**
      * @return SearchCriteriaInterface[]
      */
-    protected function getClauses()
+    public function getClauses()
     {
         return $this->clauses;
     }
@@ -222,7 +222,7 @@ class SearchCriteria implements SearchCriteriaInterface
     protected function getConjunction($key)
     {
         $conjunctions = $this->getConjunctions();
-        if (!array_key_exists($key, $conjunctions)) {
+        if (!array_key_exists($key, $conjunctions ?? [])) {
             return null;
         }
 

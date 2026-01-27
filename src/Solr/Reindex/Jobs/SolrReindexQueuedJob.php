@@ -35,7 +35,7 @@ class SolrReindexQueuedJob extends SolrReindexQueuedJobBase
      */
     protected $classes;
 
-    public function __construct($batchSize = null, $taskName = null, $classes = null)
+    public function __construct(?int $batchSize = null, ?string $taskName = null, array|string|null $classes = null)
     {
         $this->batchSize = $batchSize;
         $this->taskName = $taskName;

@@ -17,14 +17,19 @@ class WebDAV
     public static function exists($url)
     {
         // WebDAV expects that checking a directory exists has a trailing slash
-        if (substr($url, -1) != '/') {
+        if (substr($url ?? '', -1) != '/') {
             $url .= '/';
         }
 
         $ch = self::curl_init($url, 'PROPFIND');
-        
-        $res = curl_exec($ch);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Depth: 1']);
+
+        curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        $err = curl_error($ch);
+
+        curl_close($ch);
 
         if ($code == 404) {
             return false;
@@ -33,15 +38,16 @@ class WebDAV
             return true;
         }
 
-        user_error("Got error from webdav server - " . $code, E_USER_ERROR);
+        trigger_error("Got error from webdav server - " . $err, E_USER_ERROR);
     }
 
     public static function mkdir($url)
     {
-        $ch = self::curl_init(rtrim($url, '/') . '/', 'MKCOL');
+        $ch = self::curl_init(rtrim($url ?? '', '/') . '/', 'MKCOL');
 
-        $res = curl_exec($ch);
+        curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
         return $code == 201;
     }
@@ -56,22 +62,24 @@ class WebDAV
 
         curl_setopt($ch, CURLOPT_INFILE, $handle);
 
-        $res = curl_exec($ch);
+        curl_exec($ch);
         fclose($handle);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-        return curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        return $code;
     }
 
     public static function upload_from_string($string, $url)
     {
         $fh = tmpfile();
-        fwrite($fh, $string);
+        fwrite($fh, $string ?? '');
         fseek($fh, 0);
         return self::put($fh, $url);
     }
 
     public static function upload_from_file($string, $url)
     {
-        return self::put(fopen($string, 'rb'), $url);
+        return self::put(fopen($string ?? '', 'rb'), $url);
     }
 }

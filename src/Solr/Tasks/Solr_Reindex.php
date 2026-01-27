@@ -79,6 +79,7 @@ class Solr_Reindex extends Solr_BuildTask
         // this is for when index names do not match the class name (this can be done by overloading getIndexName() on
         // indexes
         if ($index && !ClassInfo::exists($index)) {
+
             foreach (ClassInfo::subclassesFor(SolrIndex::class) as $solrIndexClass) {
                 $reflection = new ReflectionClass($solrIndexClass);
                 //skip over abstract classes
@@ -86,7 +87,7 @@ class Solr_Reindex extends Solr_BuildTask
                     continue;
                 }
                 //check the indexname matches the index passed to the request
-                if (!strcasecmp(singleton($solrIndexClass)->getIndexName(), $index)) {
+                if (!strcasecmp(singleton($solrIndexClass)->getIndexName() ?? '', $index ?? '')) {
                     //if we match, set the correct index name and move on
                     $index = $solrIndexClass;
                     break;
@@ -104,7 +105,7 @@ class Solr_Reindex extends Solr_BuildTask
             // Run grouped batches (id % groups = group)
             $group = $request->getVar('group');
             $indexInstance = singleton($index);
-            $state = json_decode($request->getVar('variantstate'), true);
+            $state = json_decode($request->getVar('variantstate') ?? '', true);
 
             $handler->runGroup($this->getLogger(), $indexInstance, $state, $class, $groups, $group);
             return;

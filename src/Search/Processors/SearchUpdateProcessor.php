@@ -2,9 +2,13 @@
 
 namespace SilverStripe\FullTextSearch\Search\Processors;
 
+use SilverStripe\FullTextSearch\Search\Services\SearchableService;
+use SilverStripe\FullTextSearch\Search\Variants\SearchVariantVersioned;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
 use SilverStripe\FullTextSearch\Search\FullTextSearch;
+use SilverStripe\Versioned\Versioned;
 
 abstract class SearchUpdateProcessor
 {
@@ -31,7 +35,7 @@ abstract class SearchUpdateProcessor
      * @var array
      */
     protected $dirty;
-    
+
     public function __construct()
     {
         $this->dirty = array();
@@ -51,7 +55,7 @@ abstract class SearchUpdateProcessor
                 $forclass[$statekey] = array('state' => $state, 'ids' => array($id => array($index)));
             } elseif (!isset($forclass[$statekey]['ids'][$id])) {
                 $forclass[$statekey]['ids'][$id] = array($index);
-            } elseif (array_search($index, $forclass[$statekey]['ids'][$id]) === false) {
+            } elseif (array_search($index, $forclass[$statekey]['ids'][$id] ?? []) === false) {
                 $forclass[$statekey]['ids'][$id][] = $index;
                 // dirty count stays the same
             }
@@ -59,7 +63,7 @@ abstract class SearchUpdateProcessor
 
         $this->dirty[$base] = $forclass;
     }
-    
+
     /**
      * Generates the list of indexes to process for the dirty items
      *
@@ -71,6 +75,8 @@ abstract class SearchUpdateProcessor
         $dirtyIndexes = array();
         $dirty = $this->getSource();
         $indexes = FullTextSearch::get_indexes();
+        $searchableService = SearchableService::singleton();
+
         foreach ($dirty as $base => $statefulids) {
             if (!$statefulids) {
                 continue;
@@ -83,11 +89,20 @@ abstract class SearchUpdateProcessor
                 SearchVariant::activate_state($state);
 
                 // Ensure that indexes for all new / updated objects are included
-                $objs = DataObject::get($base)->byIDs(array_keys($ids));
+                $objs = DataObject::get($base)->byIDs(array_keys($ids ?? []));
+
+                /** @var DataObject $obj */
                 foreach ($objs as $obj) {
                     foreach ($ids[$obj->ID] as $index) {
-                        if (!$indexes[$index]->variantStateExcluded($state)) {
-                            $indexes[$index]->add($obj);
+                        if (!$searchableService->variantStateExcluded($state) &&
+                            !$indexes[$index]->variantStateExcluded($state)
+                        ) {
+                            // Remove any existing data from index if the object is no longer indexable
+                            if (!$searchableService->isIndexable($obj)) {
+                                $indexes[$index]->delete($base, $obj->ID, $state);
+                            } else {
+                                $indexes[$index]->add($obj);
+                            }
                             $dirtyIndexes[$index] = $indexes[$index];
                         }
                     }
@@ -97,7 +112,9 @@ abstract class SearchUpdateProcessor
                 // Generate list of records that do not exist and should be removed
                 foreach ($ids as $id => $fromindexes) {
                     foreach ($fromindexes as $index) {
-                        if (!$indexes[$index]->variantStateExcluded($state)) {
+                        if (!$searchableService->variantStateExcluded($state) &&
+                            !$indexes[$index]->variantStateExcluded($state)
+                        ) {
                             $indexes[$index]->delete($base, $id, $state);
                             $dirtyIndexes[$index] = $indexes[$index];
                         }
@@ -105,11 +122,11 @@ abstract class SearchUpdateProcessor
                 }
             }
         }
-        
+
         SearchVariant::activate_state($originalState);
         return $dirtyIndexes;
     }
-    
+
     /**
      * Commits the specified index to the Solr service
      *
@@ -120,7 +137,7 @@ abstract class SearchUpdateProcessor
     {
         return $index->commit() !== false;
     }
-    
+
     /**
      * Gets the record data source to process
      *
@@ -138,6 +155,9 @@ abstract class SearchUpdateProcessor
      */
     public function process()
     {
+        if (!DB::is_active()) {
+            return false;
+        }
         // Generate and commit all instances
         $indexes = $this->prepareIndexes();
         foreach ($indexes as $index) {

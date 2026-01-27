@@ -18,7 +18,7 @@ interface SolrReindexHandler
      * @param string $taskName Name of devtask to run
      * @param string|array|null $classes Optional class or classes to limit index to
      */
-    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, $classes = null);
+    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, array|string|null $classes = null);
 
     /**
      * Begin an immediate re-index
@@ -28,7 +28,7 @@ interface SolrReindexHandler
      * @param string $taskName Name of devtask to run
      * @param string|array|null $classes Optional class or classes to limit index to
      */
-    public function runReindex(LoggerInterface $logger, $batchSize, $taskName, $classes = null);
+    public function runReindex(LoggerInterface $logger, $batchSize, $taskName, array|string|null $classes = null);
 
     /**
      * Do an immediate re-index on the given group, where the group is defined as the list of items

@@ -8,10 +8,10 @@ class Solr4Service_Core extends SolrService_Core
      * Replace underlying commit function to remove waitFlush in 4.0+, since it's been deprecated and 4.4 throws errors
      * if you pass it
      */
-    public function commit($expungeDeletes = false, $waitFlush = null, $waitSearcher = true, $timeout = 3600)
+    public function commit($expungeDeletes = false, $waitFlush = false, $waitSearcher = true, $timeout = 3600)
     {
         if ($waitFlush) {
-            user_error('waitFlush must be false when using Solr 4.0+' . E_USER_ERROR);
+            trigger_error('waitFlush must be false when using Solr 4.0+', E_USER_ERROR);
         }
 
         $expungeValue = $expungeDeletes ? 'true' : 'false';

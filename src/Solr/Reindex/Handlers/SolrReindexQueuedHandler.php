@@ -65,7 +65,7 @@ class SolrReindexQueuedHandler extends SolrReindexBase
         return DB::affected_rows();
     }
 
-    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, $classes = null)
+    public function triggerReindex(LoggerInterface $logger, $batchSize, $taskName, array|string|null $classes = null)
     {
         // Cancel existing jobs
         $queues = $this->cancelExistingJobs(SolrReindexQueuedJob::class);
