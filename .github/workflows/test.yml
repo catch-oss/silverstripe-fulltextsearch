@@ -1,0 +1,106 @@
+name: Tests (PHP) with MySQL
+
+on:
+  push:
+    branches: [master, main, release/*, feature/*]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: silverstripe_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..60}; do
+            if mysqladmin ping -h127.0.0.1 -P3306 -uroot -proot --silent; then
+              echo "MySQL is up!"
+              break
+            fi
+            echo "Waiting for MySQL ($i/60)..."
+            sleep 2
+          done
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mysql, pdo_mysql, gd, intl, mbstring, exif, dom, xml, curl
+          ini-values: memory_limit=1024M
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Cache Composer deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Configure Composer allow-plugins
+        run: |
+          composer config allow-plugins.composer/installers true
+          composer config allow-plugins.silverstripe/vendor-plugin true
+
+      - name: Install Composer deps
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Configure Silverstripe .env
+        run: |
+          {
+            echo "SS_ENVIRONMENT_TYPE=dev"
+            echo "SS_RUNNING_TESTS=true"
+            echo "SS_BASE_URL=http://localhost/"
+            echo "SS_DATABASE_SERVER=127.0.0.1"
+            echo "SS_DATABASE_USERNAME=root"
+            echo "SS_DATABASE_PASSWORD=root"
+            echo "SS_DATABASE_NAME=silverstripe_test"
+            echo "SS_DATABASE_CLASS=MySQLDatabase"
+          } >> .env
+
+      - name: Check for test configuration
+        id: check-tests
+        run: |
+          if [ -f phpunit.xml ] || [ -f phpunit.xml.dist ]; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+            echo "No phpunit configuration found - skipping tests"
+          fi
+
+      - name: Run tests
+        if: steps.check-tests.outputs.has_tests == 'true'
+        run: |
+          mkdir -p coverage/php
+          vendor/bin/phpunit --log-junit coverage/php/junit.xml --coverage-clover coverage/php/coverage.xml
+
+      - name: Upload test artifacts
+        if: steps.check-tests.outputs.has_tests == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: coverage/
+          if-no-files-found: warn
