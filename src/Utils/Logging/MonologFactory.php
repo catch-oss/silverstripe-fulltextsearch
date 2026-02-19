@@ -63,20 +63,20 @@ class MonologFactory implements SearchLogFactory
     }
 
     /**
-     * Gets a formatter for standard output
+     * Gets a formatter for standard output using Catch log format
      *
      * @return FormatterInterface
      */
     protected function getFormatter()
     {
-        // Get formatter
-        $format = LineFormatter::SIMPLE_FORMAT;
+        $format = "[%datetime%] %level_name% %channel% - %message% %context% %extra%\n";
+        $dateFormat = "Y-m-d H:i:s";
         if (!Director::is_cli()) {
             $format = "<p>$format</p>";
         }
         return Injector::inst()->createWithArgs(
             LineFormatter::class,
-            array($format)
+            array($format, $dateFormat)
         );
     }
 
@@ -88,9 +88,11 @@ class MonologFactory implements SearchLogFactory
      */
     protected function getLoggerFor($name)
     {
+        // Convert FQCN to dot notation channel name (Catch logging standard)
+        $channel = str_replace('\\', '.', $name ?? '');
         return Injector::inst()->createWithArgs(
             Logger::class,
-            array(strtolower($name ?? ''))
+            array($channel)
         );
     }
 
