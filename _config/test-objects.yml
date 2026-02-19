@@ -72,7 +72,7 @@ SilverStripe\FullTextSearch\Tests\SearchVariantVersionedTest\SearchVariantVersio
 SilverStripe\FullTextSearch\Tests\SolrIndexVersionedTest\SolrIndexVersionedTest_Object:
   table_name: SolrIndexVersionedTest_Object
   extensions:
-    - SilverStripe\Versioned\Versioned
+    versioned: SilverStripe\Versioned\Versioned
   db:
     Title: Varchar
     Content: Text

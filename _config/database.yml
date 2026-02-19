@@ -3,4 +3,4 @@ Name: fulltextsearchproxydb
 ---
 TractorCow\SilverStripeProxyDB\ProxyDBFactory:
   extensions:
-    - SilverStripe\FullTextSearch\Search\Extensions\ProxyDBExtension
+    fulltextsearchproxydb: SilverStripe\FullTextSearch\Search\Extensions\ProxyDBExtension
