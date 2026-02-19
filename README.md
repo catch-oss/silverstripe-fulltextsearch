@@ -1,10 +1,21 @@
 # FullTextSearch module
 
-[![CI](https://github.com/silverstripe/silverstripe-fulltextsearch/actions/workflows/ci.yml/badge.svg)](https://github.com/silverstripe/silverstripe-fulltextsearch/actions/workflows/ci.yml)
-[![Silverstripe supported module](https://img.shields.io/badge/silverstripe-supported-0071C4.svg)](https://www.silverstripe.org/software/addons/silverstripe-commercially-supported-module-list/)
+<!-- PROJECT SHIELDS -->
+[![SonarCloud](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml)
+[![Test](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=bugs)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=code_smells)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=coverage)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Duplicated Lines Density](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=ncloc)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=security_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=sqale_index)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=vulnerabilities)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
 
 Adds support for fulltext search engines like Sphinx and Solr to Silverstripe CMS.
-Compatible with PHP 7.2
 
 ## Important notes when upgrading to fulltextsearch 3.7.0+
 
@@ -58,7 +69,7 @@ SilverStripe\FullTextSearch\Search\Services\SearchableService:
 ```
 
 You can also use the `updateIsSearchable` extension point on `SearchableService` to modify the result of the method
-after the `ShowInSearch` and `canView()` checks have run. 
+after the `ShowInSearch` and `canView()` checks have run.
 
 It is highly recommend you run a [solr_reindex](https://github.com/silverstripe/silverstripe-fulltextsearch/blob/3/docs/en/03_configuration.md#solr-reindex)
 on your production site after upgrading from 3.6 or earlier to purge any old data that should no longer be in the search index.
