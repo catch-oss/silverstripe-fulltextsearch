@@ -1,10 +1,19 @@
 # FullTextSearch module
 
-[![CI](https://github.com/silverstripe/silverstripe-fulltextsearch/actions/workflows/ci.yml/badge.svg)](https://github.com/silverstripe/silverstripe-fulltextsearch/actions/workflows/ci.yml)
-[![Silverstripe supported module](https://img.shields.io/badge/silverstripe-supported-0071C4.svg)](https://www.silverstripe.org/software/addons/silverstripe-commercially-supported-module-list/)
+<!-- PROJECT SHIELDS -->
+[![Test](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml)
+[![SonarCloud](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=catch-oss_silverstripe-fulltextsearch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=catch-oss_silverstripe-fulltextsearch)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=catch-oss_silverstripe-fulltextsearch&metric=coverage)](https://sonarcloud.io/component_measures?id=catch-oss_silverstripe-fulltextsearch)
 
 Adds support for fulltext search engines like Sphinx and Solr to Silverstripe CMS.
-Compatible with PHP 7.2
+
+## Compatibility
+
+| Version | Silverstripe | PHP |
+|---------|-------------|-----|
+| release/6 | ^6.0 | ^8.5 |
+| release/5 | ^5.1 | ^8.1 |
 
 ## Important notes when upgrading to fulltextsearch 3.7.0+
 
@@ -84,9 +93,7 @@ it's recommended you update your implementation to call `SearchableService::isVi
 
 ## Requirements
 
-* Silverstripe 4.0+
-
-**Note:** For Silverstripe 3.x, please use the [2.x release line](https://github.com/silverstripe/silverstripe-fulltextsearch/tree/2).
+See compatibility table above.
 
 ## Documentation
 
