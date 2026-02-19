@@ -1,3 +1,9 @@
 /vendor/
 /resources/
 composer.lock
+app/
+public/
+.htaccess
+index.php
+web.config
+.phpunit.cache

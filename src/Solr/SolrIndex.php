@@ -17,7 +17,7 @@ use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
-use SilverStripe\ORM\PaginatedList;
+use SilverStripe\Model\List\PaginatedList;
 use SilverStripe\Model\ArrayData;
 use SilverStripe\FullTextSearch\Search\Criteria\SearchCriterion;
 
@@ -445,8 +445,20 @@ abstract class SolrIndex extends SearchIndex
         $type = isset($typeMap[$spec['type']]) ? $typeMap[$spec['type']] : $typeMap['*'];
 
         $analyzerXml = '';
-        if (isset($this->analyzerFields[$name])) {
-            foreach ($this->analyzerFields[$name] as $analyzerType => $analyzerParams) {
+        // Check both transformed and original field names for analyzers,
+        // since addAnalyzer stores with original names but field definitions use transformed names
+        $analyzerKey = $name;
+        if (!isset($this->analyzerFields[$analyzerKey])) {
+            // Try reversing the transform: replace _ with \ for namespace-based names
+            foreach ($this->analyzerFields as $key => $value) {
+                if ($this->transformFieldName($key) === $name || $this->transformFieldName($key, false) === $name) {
+                    $analyzerKey = $key;
+                    break;
+                }
+            }
+        }
+        if (isset($this->analyzerFields[$analyzerKey])) {
+            foreach ($this->analyzerFields[$analyzerKey] as $analyzerType => $analyzerParams) {
                 $analyzerXml .= $this->toXmlTag($analyzerType, $analyzerParams);
             }
         }

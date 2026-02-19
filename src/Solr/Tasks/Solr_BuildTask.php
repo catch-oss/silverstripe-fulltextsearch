@@ -4,10 +4,9 @@ namespace SilverStripe\FullTextSearch\Solr\Tasks;
 use Psr\Log\LoggerInterface;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\FullTextSearch\Utils\Logging\SearchLogFactory;
-use SilverStripe\PolyExec\PolyCommand;
-use Symfony\Component\Console\Command\Command;
+use SilverStripe\PolyExecution\PolyCommand;
+use SilverStripe\PolyExecution\PolyOutput;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Abstract class for Solr tasks
@@ -50,9 +49,9 @@ abstract class Solr_BuildTask extends PolyCommand
     }
 
     /**
-     * Setup task logging
+     * Setup task logging and run the task
      */
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function run(InputInterface $input, PolyOutput $output): int
     {
         $name = get_class($this);
         $verbose = $output->isVerbose();
@@ -63,6 +62,6 @@ abstract class Solr_BuildTask extends PolyCommand
             ->getOutputLogger($name, $verbose);
         $this->setLogger($logger);
 
-        return Command::SUCCESS;
+        return 0;
     }
 }

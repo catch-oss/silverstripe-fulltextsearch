@@ -106,7 +106,7 @@ class SolrReindexTest extends SapphireTest
     protected function getServiceMock()
     {
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['deleteByQuery', 'addDocument']);
+            ->onlyMethods(['deleteByQuery', 'addDocument']);
 
         return $serviceMock->getMock();
     }
@@ -133,6 +133,10 @@ class SolrReindexTest extends SapphireTest
      */
     public function testVariant()
     {
+        // GIVEN test variant is enabled with states 0, 1, 2
+        // WHEN querying variant state and creating dummy data
+        // THEN variant filtering and state enumeration work correctly
+
         // State defaults to 0
         $variant = SearchVariant::current_state();
         $this->assertEquals(
@@ -179,11 +183,22 @@ class SolrReindexTest extends SapphireTest
      */
     public function testReindexSegmentsGroups()
     {
+        // GIVEN 120 dummy records per variant and a mock service expecting specific deleteByQuery calls
+        // WHEN running a full reindex with group size 21
+        // THEN records are segmented into correct groups per variant, and obsolete classes/variants are cleared
+
+        $expectedQueries = [
+            '-(ClassHierarchy:' . SolrReindexTest_Item::class . ')',
+            '+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +(_testvariant:"2")',
+        ];
+        $deleteCallIndex = 0;
         $this->service->method('deleteByQuery')
-            ->withConsecutive(
-                ['-(ClassHierarchy:' . SolrReindexTest_Item::class . ')'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +(_testvariant:"2")']
-            );
+            ->willReturnCallback(function ($query) use (&$deleteCallIndex, $expectedQueries) {
+                if (isset($expectedQueries[$deleteCallIndex])) {
+                    $this->assertEquals($expectedQueries[$deleteCallIndex], $query);
+                }
+                $deleteCallIndex++;
+            });
 
         $this->createDummyData(120);
 
@@ -237,6 +252,10 @@ class SolrReindexTest extends SapphireTest
      */
     public function testRunGroup()
     {
+        // GIVEN 120 dummy records with canView check skipped for test items
+        // WHEN running reindex for group 2 of 6 in variant state 1
+        // THEN approximately 20 records are indexed, all matching the expected modulo pattern
+
         $classesToSkip = [SolrReindexTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
@@ -272,19 +291,25 @@ class SolrReindexTest extends SapphireTest
      */
     public function testRunAllGroups()
     {
+        // GIVEN 120 dummy records with canView check skipped, and 7 expected deleteByQuery calls
+        // WHEN running all 6 groups sequentially for variant state 1
+        // THEN all 120 records are covered across all groups
+
         $classesToSkip = [SolrReindexTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
+        $expectedQueries = [];
+        for ($i = 0; $i <= 6; $i++) {
+            $expectedQueries[] = '+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=' . $i . ' u=' . $i . '}mod(ID, 6)" +(_testvariant:"1")';
+        }
+        $deleteCallIndex = 0;
         $this->service->method('deleteByQuery')
-            ->withConsecutive(
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=0 u=0}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=1 u=1}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=2 u=2}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=3 u=3}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=4 u=4}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=5 u=5}mod(ID, 6)" +(_testvariant:"1")'],
-                ['+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +_query_:"{!frange l=6 u=6}mod(ID, 6)" +(_testvariant:"1")']
-            );
+            ->willReturnCallback(function ($query) use (&$deleteCallIndex, $expectedQueries) {
+                if (isset($expectedQueries[$deleteCallIndex])) {
+                    $this->assertEquals($expectedQueries[$deleteCallIndex], $query);
+                }
+                $deleteCallIndex++;
+            });
 
         $this->createDummyData(120);
         $logger = new SolrReindexTest_RecordingLogger();
@@ -314,6 +339,10 @@ class SolrReindexTest extends SapphireTest
      */
     public function testShowInSearch()
     {
+        // GIVEN pages, files, and data objects with mixed ShowInSearch values
+        // WHEN reindexing with ShowInSearch filtering enabled
+        // THEN only records with ShowInSearch=true (or overridden getShowInSearch) are added to the index
+
         // allow anonymous users to assess draft-only content to pass canView() check (will auto-reset for next test)
         Versioned::set_draft_site_secured(false);
         Versioned::set_reading_mode('Stage.' . Versioned::DRAFT);
@@ -370,7 +399,7 @@ class SolrReindexTest extends SapphireTest
         $myPageA->write();
 
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['addDocument', 'deleteByQuery'])
+            ->onlyMethods(['addDocument', 'deleteByQuery'])
             ->getMock();
 
         $index = new SolrIndexTest_ShowInSearchIndex();
@@ -391,13 +420,7 @@ class SolrReindexTest extends SapphireTest
         $serviceMock
             ->expects($this->exactly(5))
             ->method('addDocument')
-            ->withConsecutive(
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)]
-            );
+            ->with($this->callback($callback));
 
         $logger = new SolrReindexTest_RecordingLogger();
         $state = [SearchVariantVersioned::class => Versioned::DRAFT];
@@ -412,6 +435,10 @@ class SolrReindexTest extends SapphireTest
      */
     public function testCanView()
     {
+        // GIVEN pages, files, and data objects with mixed CanViewType/CanViewValue settings
+        // WHEN reindexing with CanView filtering enabled
+        // THEN only records viewable by anonymous users are added to the index
+
         // allow anonymous users to assess draft-only content to pass canView() check (will auto-reset for next test)
         Versioned::set_draft_site_secured(false);
         Versioned::set_reading_mode('Stage.' . Versioned::DRAFT);
@@ -456,7 +483,7 @@ class SolrReindexTest extends SapphireTest
         $objOne->write();
 
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['addDocument', 'deleteByQuery'])
+            ->onlyMethods(['addDocument', 'deleteByQuery'])
             ->getMock();
 
         $index = new SolrIndexTest_ShowInSearchIndex();
@@ -476,11 +503,7 @@ class SolrReindexTest extends SapphireTest
         $serviceMock
             ->expects($this->exactly(3))
             ->method('addDocument')
-            ->withConsecutive(
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)]
-            );
+            ->with($this->callback($callback));
 
         $logger = new SolrReindexTest_RecordingLogger();
         $state = [SearchVariantVersioned::class => Versioned::DRAFT];

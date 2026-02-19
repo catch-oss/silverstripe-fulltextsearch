@@ -53,8 +53,13 @@ class SearchUpdaterTest extends SapphireTest
 
     public function testBasic()
     {
+        // GIVEN a new container object
         $item = new SearchUpdaterTest_Container();
+
+        // WHEN the container is written to the database
         $item->write();
+
+        // THEN the write completes without error
         $this->assertTrue(true);
 
         // TODO: Make sure changing field1 updates item.
@@ -63,6 +68,7 @@ class SearchUpdaterTest extends SapphireTest
 
     public function testHasOneHook()
     {
+        // GIVEN two has_one objects and three containers linked via has_one relationships
         $classesToSkip = [SearchUpdaterTest_Container::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
@@ -84,7 +90,7 @@ class SearchUpdaterTest extends SapphireTest
         $container3->HasOneObjectID = $alternateHasOne->ID;
         $container3->write();
 
-        // Check the default "writing a document updates the document"
+        // WHEN dirty indexes are flushed after initial writes
         SearchUpdater::flush_dirty_indexes();
 
         $added = self::$index->getAdded(['ID']);
@@ -93,14 +99,14 @@ class SearchUpdaterTest extends SapphireTest
             return $a['ID']-$b['ID'];
         });
 
+        // THEN all three containers are added to the index
         $this->assertEquals([
             ['ID' => $container1->ID],
             ['ID' => $container2->ID],
             ['ID' => $container3->ID],
         ], $added);
 
-        // Check writing a has_one tracks back to the origin documents
-
+        // WHEN a has_one object's indexed field is updated
         self::$index->reset();
 
         $hasOne->Field1 = "Updated";
@@ -114,29 +120,32 @@ class SearchUpdaterTest extends SapphireTest
             return $a['ID']-$b['ID'];
         });
 
+        // THEN only the containers linked to that has_one are re-indexed
         $this->assertEquals([
             ['ID' => $container1->ID],
             ['ID' => $container2->ID],
         ], $added);
 
-        // Check updating an unrelated field doesn't track back
-
+        // WHEN an unrelated field on the has_one object is updated
         self::$index->reset();
 
         $hasOne->Field2 = "Updated";
         $hasOne->write();
 
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN no containers are re-indexed
         $this->assertEquals([], self::$index->getAdded(['ID']));
 
-        // Check writing a has_one tracks back to the origin documents
-
+        // WHEN the alternate has_one object's indexed field is updated
         self::$index->reset();
 
         $alternateHasOne->Field1= "Updated";
         $alternateHasOne->write();
 
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN only the container linked to the alternate has_one is re-indexed
         $this->assertEquals([
             ['ID' => $container3->ID],
         ], self::$index->getAdded(['ID']));
@@ -144,6 +153,7 @@ class SearchUpdaterTest extends SapphireTest
 
     public function testHasManyHook()
     {
+        // GIVEN two containers and two has_many objects linked to container1
         $classesToSkip = [SearchUpdaterTest_Container::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
@@ -164,13 +174,16 @@ class SearchUpdaterTest extends SapphireTest
         $hasMany2->HasManyContainerID = $container1->ID;
         $hasMany2->write();
 
+        // WHEN dirty indexes are flushed after initial writes
         SearchUpdater::flush_dirty_indexes();
 
+        // THEN both containers are added to the index
         $this->assertEquals([
             ['ID' => $container1->ID],
             ['ID' => $container2->ID],
         ], self::$index->getAdded(['ID']));
 
+        // WHEN the has_many objects' indexed fields are updated
         self::$index->reset();
 
         $hasMany1->Field1 = 'Updated';
@@ -180,6 +193,8 @@ class SearchUpdaterTest extends SapphireTest
         $hasMany2->write();
 
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN only the container linked to the has_many objects is re-indexed
         $this->assertEquals([
             ['ID' => $container1->ID],
         ], self::$index->getAdded(['ID']));

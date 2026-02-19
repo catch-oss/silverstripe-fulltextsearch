@@ -8,10 +8,9 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
 use SilverStripe\FullTextSearch\Solr\Reindex\Handlers\SolrReindexHandler;
 use SilverStripe\FullTextSearch\Solr\SolrIndex;
-use Symfony\Component\Console\Command\Command;
+use SilverStripe\PolyExecution\PolyOutput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Task used for both initiating a new reindex, as well as for processing incremental batches
@@ -30,7 +29,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Solr_Reindex extends Solr_BuildTask
 {
     protected static string $commandName = 'solr:reindex';
-    protected string $description = 'Reindex Solr indexes';
+    protected static string $description = 'Reindex Solr indexes';
 
     /**
      * @config
@@ -45,14 +44,20 @@ class Solr_Reindex extends Solr_BuildTask
      */
     private static $recordsPerRequest = 200;
 
-    protected function configure(): void
+    public function getTitle(): string
     {
-        $this
-            ->addOption('class', null, InputOption::VALUE_OPTIONAL, 'Class to limit reindex to')
-            ->addOption('index', null, InputOption::VALUE_OPTIONAL, 'Index name or class')
-            ->addOption('groups', null, InputOption::VALUE_OPTIONAL, 'Total number of groups')
-            ->addOption('group', null, InputOption::VALUE_OPTIONAL, 'Group number to process')
-            ->addOption('variantstate', null, InputOption::VALUE_OPTIONAL, 'JSON-encoded variant state');
+        return 'Solr Reindex';
+    }
+
+    public function getOptions(): array
+    {
+        return [
+            new InputOption('class', null, InputOption::VALUE_OPTIONAL, 'Class to limit reindex to'),
+            new InputOption('index', null, InputOption::VALUE_OPTIONAL, 'Index name or class'),
+            new InputOption('groups', null, InputOption::VALUE_OPTIONAL, 'Total number of groups'),
+            new InputOption('group', null, InputOption::VALUE_OPTIONAL, 'Group number to process'),
+            new InputOption('variantstate', null, InputOption::VALUE_OPTIONAL, 'JSON-encoded variant state'),
+        ];
     }
 
     /**
@@ -65,9 +70,9 @@ class Solr_Reindex extends Solr_BuildTask
         return Injector::inst()->get(SolrReindexHandler::class);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function run(InputInterface $input, PolyOutput $output): int
     {
-        parent::execute($input, $output);
+        parent::run($input, $output);
 
         $this->extend('updateBeforeSolrReindexTask', $input);
 
@@ -78,7 +83,7 @@ class Solr_Reindex extends Solr_BuildTask
 
         $this->extend('updateAfterSolrReindexTask', $input);
 
-        return Command::SUCCESS;
+        return 0;
     }
 
     protected function doReindex(InputInterface $input): void

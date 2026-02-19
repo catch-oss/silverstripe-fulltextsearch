@@ -100,7 +100,7 @@ class SolrReindexQueuedTest extends SapphireTest
         // Setup mock
         /** @var Solr4Service $serviceMock */
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['deleteByQuery', 'addDocument'])
+            ->onlyMethods(['deleteByQuery', 'addDocument'])
             ->getMock();
 
         return $serviceMock;
@@ -137,6 +137,7 @@ class SolrReindexQueuedTest extends SapphireTest
      */
     public function testReindexSegmentsGroups()
     {
+        // GIVEN 18 dummy records across 2 variants with a queued reindex handler configured
         $classesToSkip = [SolrReindexTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
@@ -145,27 +146,28 @@ class SolrReindexQueuedTest extends SapphireTest
         // Deletes are performed in the main task prior to individual groups being processed
         // 18 records means 3 groups of 6 in each variant (6 total)
         // Ensure correct call is made to Solr
+        $expectedQueries = [
+            '-(ClassHierarchy:' . SolrReindexTest_Item::class . ')',
+            '+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +(_testvariant:"2")',
+        ];
+        $deleteCallIndex = 0;
         $this->service->expects($this->exactly(2))
             ->method('deleteByQuery')
-            ->withConsecutive(
-                [
-                    $this->equalTo('-(ClassHierarchy:' . SolrReindexTest_Item::class . ')')
-                ],
-                [
-                    $this->equalTo('+(ClassHierarchy:' . SolrReindexTest_Item::class . ') +(_testvariant:"2")')
-                ]
-            );
+            ->willReturnCallback(function ($query) use (&$deleteCallIndex, $expectedQueries) {
+                $this->assertEquals($expectedQueries[$deleteCallIndex], $query);
+                $deleteCallIndex++;
+            });
 
         // Create pre-existing jobs
         $this->getQueuedJobService()->queueJob(new SolrReindexQueuedJob());
         $this->getQueuedJobService()->queueJob(new SolrReindexGroupQueuedJob());
         $this->getQueuedJobService()->queueJob(new SolrReindexGroupQueuedJob());
 
-        // Initiate re-index
+        // WHEN a reindex is triggered with batch size 6
         $logger = new SolrReindexTest_RecordingLogger();
         $this->getHandler()->triggerReindex($logger, 6, 'Solr_Reindex');
 
-        // Old jobs should be cancelled
+        // THEN old jobs are cancelled and new queued jobs are created with correct grouping
         $this->assertEquals(1, $logger->countMessages('Cancelled 1 re-index tasks and 2 re-index groups'));
         $this->assertEquals(1, $logger->countMessages('Queued Solr Reindex Job'));
 
@@ -199,6 +201,7 @@ class SolrReindexQueuedTest extends SapphireTest
      */
     public function testRunGroup()
     {
+        // GIVEN 18 dummy records with batch size 6 producing 6 group jobs
         $classesToSkip = [SolrReindexTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
 
@@ -211,7 +214,7 @@ class SolrReindexQueuedTest extends SapphireTest
         // Assert jobs are created
         $this->assertEquals(6, $logger->countMessages('Queued Solr Reindex Group'));
 
-        // Check next job is a group queued job
+        // WHEN the first group queued job is processed
         /** @var SolrReindexGroupQueuedJob $job */
         $job = $this->getQueuedJobService()->getNextJob();
         $this->assertInstanceOf(SolrReindexGroupQueuedJob::class, $job);
@@ -225,7 +228,7 @@ class SolrReindexQueuedTest extends SapphireTest
         $job->setLogger($logger);
         $job->process();
 
-        // Check tasks completed (as per non-queuedjob version)
+        // THEN the group reindexes exactly 6 records matching the expected ID pattern
         $this->assertEquals(1, $logger->countMessages('Beginning reindex group'));
         $this->assertEquals(1, $logger->countMessages('Adding ' . SolrReindexTest_Item::class . ''));
         $this->assertEquals(1, $logger->countMessages('Queuing commit on all changes'));

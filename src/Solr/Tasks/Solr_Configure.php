@@ -9,23 +9,27 @@ use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_File;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_Post;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_WebDAV;
-use Symfony\Component\Console\Command\Command;
+use SilverStripe\PolyExecution\PolyOutput;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 
 class Solr_Configure extends Solr_BuildTask
 {
     protected static string $commandName = 'solr:configure';
-    protected string $description = 'Configure Solr indexes';
+    protected static string $description = 'Configure Solr indexes';
 
     /**
      * @config
      */
     private static $segment = 'Solr_Configure';
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function getTitle(): string
     {
-        parent::execute($input, $output);
+        return 'Solr Configure';
+    }
+
+    public function run(InputInterface $input, PolyOutput $output): int
+    {
+        parent::run($input, $output);
 
         $this->extend('updateBeforeSolrConfigureTask', $input);
 
@@ -48,7 +52,7 @@ class Solr_Configure extends Solr_BuildTask
 
         $this->extend('updateAfterSolrConfigureTask', $input);
 
-        return $hasError ? Command::FAILURE : Command::SUCCESS;
+        return $hasError ? 1 : 0;
     }
 
     /**

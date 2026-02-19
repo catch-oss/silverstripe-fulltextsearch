@@ -224,7 +224,7 @@ abstract class SearchIndex extends ModelData
                     $singleton = singleton($dataclass);
 
                     if ($singleton->hasMethod("get$field") || $singleton->hasField($field)) {
-                        $type = $singleton->castingClass($field);
+                        $type = $singleton->castingHelper($field);
                         if (!$type) {
                             $type = 'String';
                         }
@@ -375,7 +375,12 @@ abstract class SearchIndex extends ModelData
                     list($type, $args) = ClassInfo::parse_class_spec($type);
 
                     /** @var DBField $object */
-                    $object = Injector::inst()->get($type, false, ['Name' => 'test']);
+                    try {
+                        $object = Injector::inst()->get($type, false, ['Name' => 'test']);
+                    } catch (\InvalidArgumentException $e) {
+                        // Skip field types that can't be instantiated (e.g. DBGenerated in SS6)
+                        continue;
+                    }
                     if ($object instanceof DBString) {
                         $this->addFulltextField($field);
                     }
