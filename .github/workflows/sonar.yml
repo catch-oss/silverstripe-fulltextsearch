@@ -10,9 +10,6 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
 
-    env:
-      SONAR_PROJECT_KEY: catch-design_catch-oss-silverstripe-fulltextsearch
-
     outputs:
       alert_status: ${{ steps.sonarqube-report.outputs.alert_status }}
       bugs: ${{ steps.sonarqube-report.outputs.bugs }}
@@ -38,6 +35,12 @@ jobs:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
+
+      - name: Read SonarCloud project key
+        id: sonar-key
+        run: |
+          KEY=$(grep '^sonar.projectKey=' sonar-project.properties | cut -d'=' -f2)
+          echo "project_key=$KEY" >> "$GITHUB_OUTPUT"
 
       - name: Download test artifacts
         continue-on-error: true
@@ -77,6 +80,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_REF: ${{ steps.sonar-params.outputs.ref }}
+          SONAR_PROJECT_KEY: ${{ steps.sonar-key.outputs.project_key }}
         run: |
           URL="https://sonarcloud.io/api/measures/component?metricKeys=alert_status&component=$SONAR_PROJECT_KEY&$SONAR_REF"
           for attempt in 1 2 3 4 5; do
@@ -106,6 +110,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_REF: ${{ steps.sonar-params.outputs.ref }}
+          SONAR_PROJECT_KEY: ${{ steps.sonar-key.outputs.project_key }}
         run: |
           URL="https://sonarcloud.io/api/measures/component?metricKeys=alert_status%2Cbugs%2Ccode_smells%2Ccoverage%2Cduplicated_lines_density%2Cncloc%2Creliability_rating%2Csecurity_rating%2Csqale_index%2Csqale_rating%2Cvulnerabilities&component=$SONAR_PROJECT_KEY&$SONAR_REF"
           DATA=$(curl --fail --silent -H "Authorization: Bearer $SONAR_TOKEN" "$URL")
@@ -136,6 +141,6 @@ jobs:
             - **Maintainability Rating**: ${{ steps.sonarqube-report.outputs.sqale_rating }}
             - **Vulnerabilities**: ${{ steps.sonarqube-report.outputs.vulnerabilities }}
             ### More details
-            - [SonarCloud dashboard](https://sonarcloud.io/dashboard?id=catch-design_catch-oss-silverstripe-fulltextsearch&${{ steps.sonarqube-report.outputs.git_ref }})
-            - [View the full report](https://sonarcloud.io/project/issues?id=catch-design_catch-oss-silverstripe-fulltextsearch&${{ steps.sonarqube-report.outputs.git_ref }}&resolved=false)
-            - [View the Quality Gate](https://sonarcloud.io/summary/new_code?id=catch-design_catch-oss-silverstripe-fulltextsearch&${{ steps.sonarqube-report.outputs.git_ref }})
+            - [SonarCloud dashboard](https://sonarcloud.io/dashboard?id=${{ steps.sonar-key.outputs.project_key }}&${{ steps.sonarqube-report.outputs.git_ref }})
+            - [View the full report](https://sonarcloud.io/project/issues?id=${{ steps.sonar-key.outputs.project_key }}&${{ steps.sonarqube-report.outputs.git_ref }}&resolved=false)
+            - [View the Quality Gate](https://sonarcloud.io/summary/new_code?id=${{ steps.sonar-key.outputs.project_key }}&${{ steps.sonarqube-report.outputs.git_ref }})
