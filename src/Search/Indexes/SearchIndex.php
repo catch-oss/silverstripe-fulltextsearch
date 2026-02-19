@@ -15,7 +15,7 @@ use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBString;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Model\ModelData;
-use SilverStripe\ORM\SS_List;
+use SilverStripe\Model\List\SS_List;
 
 /**
  * SearchIndex is the base index class. Each connector will provide a subclass of this that

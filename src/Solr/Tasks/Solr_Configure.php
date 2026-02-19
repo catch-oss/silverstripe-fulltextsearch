@@ -9,21 +9,30 @@ use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_File;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_Post;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore_WebDAV;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class Solr_Configure extends Solr_BuildTask
 {
+    protected static string $commandName = 'solr:configure';
+    protected string $description = 'Configure Solr indexes';
+
+    /**
+     * @config
+     */
     private static $segment = 'Solr_Configure';
-    protected $enabled = true;
 
-    public function run($request)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        parent::run($request);
+        parent::execute($input, $output);
 
-        $this->extend('updateBeforeSolrConfigureTask', $request);
+        $this->extend('updateBeforeSolrConfigureTask', $input);
 
         // Find the IndexStore handler, which will handle uploading config files to Solr
         $store = $this->getSolrConfigStore();
 
+        $hasError = false;
         $indexes = Solr::get_indexes();
         foreach ($indexes as $instance) {
             try {
@@ -33,14 +42,13 @@ class Solr_Configure extends Solr_BuildTask
                 $this
                     ->getLogger()
                     ->error("Failure: " . $e->getMessage());
+                $hasError = true;
             }
         }
 
-        if (isset($e)) {
-            exit(1);
-        }
+        $this->extend('updateAfterSolrConfigureTask', $input);
 
-        $this->extend('updateAfterSolrConfigureTask', $request);
+        return $hasError ? Command::FAILURE : Command::SUCCESS;
     }
 
     /**
