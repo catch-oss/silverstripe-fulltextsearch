@@ -5,13 +5,13 @@ use Monolog\Handler\StreamHandler;
 use Psr\Log\LoggerInterface;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Dev\BuildTask;
+use SilverStripe\PolyExec\PolyCommand;
 use SilverStripe\FullTextSearch\Utils\Logging\SearchLogFactory;
 
 /**
  * Abstract class for build tasks
  */
-class Solr_BuildTask extends BuildTask
+class Solr_BuildTask extends PolyCommand
 {
     protected $enabled = false;
 

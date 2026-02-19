@@ -14,11 +14,11 @@ use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariant_Caller;
 use SilverStripe\FullTextSearch\Solr\Services\SolrService;
 use SilverStripe\FullTextSearch\Solr\Stores\SolrConfigStore;
-use SilverStripe\ORM\ArrayList;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\PaginatedList;
-use SilverStripe\View\ArrayData;
+use SilverStripe\Model\ArrayData;
 use SilverStripe\FullTextSearch\Search\Criteria\SearchCriterion;
 
 abstract class SolrIndex extends SearchIndex
