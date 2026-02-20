@@ -67,7 +67,7 @@ SilverStripe\FullTextSearch\Search\Services\SearchableService:
 ```
 
 You can also use the `updateIsSearchable` extension point on `SearchableService` to modify the result of the method
-after the `ShowInSearch` and `canView()` checks have run. 
+after the `ShowInSearch` and `canView()` checks have run.
 
 It is highly recommend you run a [solr_reindex](https://github.com/silverstripe/silverstripe-fulltextsearch/blob/3/docs/en/03_configuration.md#solr-reindex)
 on your production site after upgrading from 3.6 or earlier to purge any old data that should no longer be in the search index.
