@@ -12,7 +12,7 @@ use SilverStripe\FullTextSearch\Search\Queries\SearchQuery;
 use SilverStripe\FullTextSearch\Search\Services\SearchableService;
 use SilverStripe\FullTextSearch\Solr\SolrIndex;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\View\ArrayData;
+use SilverStripe\Model\ArrayData;
 
 class SearchForm extends Form
 {
@@ -28,10 +28,10 @@ class SearchForm extends Form
      * @param FieldList $actions Optional, defaults to a single field named "Go".
      */
     public function __construct(
-        RequestHandler $controller = null,
+        ?RequestHandler $controller = null,
         $name = 'SearchForm',
-        FieldList $fields = null,
-        FieldList $actions = null
+        ?FieldList $fields = null,
+        ?FieldList $actions = null
     ) {
         if (!$fields) {
             $fields = FieldList::create(

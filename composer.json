@@ -21,23 +21,40 @@
         }
     ],
     "require": {
-        "php": ">8.0",
-        "silverstripe/framework": "^5.1",
-        "monolog/monolog": "^3.2",
+        "php": "^8.5",
+        "silverstripe/framework": "^6.0",
+        "silverstripe/vendor-plugin": "^3.0",
+        "monolog/monolog": "^3.8",
         "silverstripe/solr-php-client": "^1.0",
         "symfony/process": "^7.0",
         "tractorcow/silverstripe-proxy-db": "^2",
         "ext-curl": "*"
     },
     "require-dev": {
-        "silverstripe/cms": "^5.1",
-        "phpunit/phpunit": "^9.5",
-        "symbiote/silverstripe-queuedjobs": "^5.0@stable"
+        "silverstripe/cms": "^6.0",
+        "silverstripe/recipe-cms": "^6.0",
+        "phpunit/phpunit": "^11.0",
+        "symbiote/silverstripe-queuedjobs": "^6.0"
     },
     "autoload": {
         "psr-4": {
-            "SilverStripe\\FullTextSearch\\": "src/",
+            "SilverStripe\\FullTextSearch\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "SilverStripe\\FullTextSearch\\Tests\\": "tests/"
+        },
+        "classmap": [
+            "app/src/Page.php",
+            "app/src/PageController.php"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "silverstripe/vendor-plugin": true,
+            "silverstripe/recipe-plugin": true
         }
     },
     "bin": [

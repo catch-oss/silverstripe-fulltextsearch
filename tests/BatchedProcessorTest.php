@@ -121,6 +121,7 @@ class BatchedProcessorTest extends SapphireTest
      */
     public function testBatching()
     {
+        // GIVEN 42 dirty IDs with a batch size of 5 and canView checks excluded
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', [SiteTree::class]);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
 
@@ -128,14 +129,14 @@ class BatchedProcessorTest extends SapphireTest
         $index->reset();
         $processor = $this->generateDirtyIds();
 
-        // Check initial state
+        // THEN the initial state has 9 total steps and nothing processed
         $data = $processor->getJobData();
         $this->assertEquals(9, $data->totalSteps);
         $this->assertEquals(0, $data->currentStep);
         $this->assertEmpty($data->isComplete);
         $this->assertEquals(0, count($index->getAdded() ?? []));
 
-        // Advance state
+        // WHEN processing 8 batches of 5 items each
         for ($pass = 1; $pass <= 8; $pass++) {
             $processor->process();
             $data = $processor->getJobData();
@@ -143,17 +144,21 @@ class BatchedProcessorTest extends SapphireTest
             $this->assertEquals($pass * 5, count($index->getAdded() ?? []));
         }
 
-        // Last run should have two hanging items
+        // WHEN the final batch is processed (2 remaining items)
         $processor->process();
         $data = $processor->getJobData();
+
+        // THEN all 42 items are indexed and the job is complete
         $this->assertEquals(9, $data->currentStep);
         $this->assertEquals(42, count($index->getAdded() ?? []));
         $this->assertTrue($data->isComplete);
 
-        // Check any additional queued jobs
+        // WHEN afterComplete is called
         $processor->afterComplete();
         $service = singleton(QueuedJobService::class);
         $jobs = $service->getJobs();
+
+        // THEN a commit job is queued
         $this->assertEquals(1, count($jobs ?? []));
         $this->assertInstanceOf(SearchUpdateCommitJobProcessor::class, $jobs[0]['job']);
     }
@@ -163,39 +168,43 @@ class BatchedProcessorTest extends SapphireTest
      */
     public function testMultipleCommits()
     {
+        // GIVEN two queued commit jobs and a reset index
         $index = singleton(BatchedProcessorTest_Index::class);
         $index->reset();
 
-        // Test that running a commit immediately after submitting to the indexes
-        // correctly commits
         $first = SearchUpdateCommitJobProcessor::queue();
         $second = SearchUpdateCommitJobProcessor::queue();
 
         $this->assertFalse($index->getIsCommitted());
 
-        // First process will cause the commit
+        // WHEN the first commit job is processed
         $this->assertFalse($first->jobFinished());
         $first->process();
         $allMessages = $first->getMessages();
+
+        // THEN the index is committed and the job finishes
         $this->assertTrue($index->getIsCommitted());
         $this->assertTrue($first->jobFinished());
         $this->assertStringEndsWith('All indexes committed', $allMessages[2]);
 
-        // Executing the subsequent processor should not re-trigger a commit
+        // WHEN the second commit job is processed after the first already committed
         $index->reset();
         $this->assertFalse($second->jobFinished());
         $second->process();
         $allMessages = $second->getMessages();
+
+        // THEN it does not re-commit and discards itself
         $this->assertFalse($index->getIsCommitted());
         $this->assertTrue($second->jobFinished());
         $this->assertStringEndsWith('Indexing already completed this request: Discarding this job', $allMessages[0]);
 
-        // Given that a third job is created, and the indexes are dirtied, attempting to run this job
-        // should result in a delay
+        // WHEN a third job is created after indexes are dirtied and processed
         $index->reset();
         $third = SearchUpdateCommitJobProcessor::queue();
         $this->assertFalse($third->jobFinished());
         $third->process();
+
+        // THEN it reschedules with a cooldown delay instead of committing
         $this->assertTrue($third->jobFinished());
         $allMessages = $third->getMessages();
         $this->assertStringEndsWith(
@@ -213,34 +222,43 @@ class BatchedProcessorTest extends SapphireTest
             '@todo PostgreSQL: This test passes in isolation, but not in conjunction with the previous test'
         );
 
+        // GIVEN 42 dirty IDs with a batch size of 5
         $index = singleton(BatchedProcessorTest_Index::class);
         $index->reset();
 
         $processor = $this->generateDirtyIds();
 
-        // Test that increasing the soft cap to 2 will reduce the number of batches
+        // WHEN soft cap is set to 2 (enough to absorb 2 remaining items)
         Config::modify()->set(SearchUpdateBatchedProcessor::class, 'batch_soft_cap', 2);
         $processor->batchData();
         $data = $processor->getJobData();
+
+        // THEN batches reduce from 9 to 8
         $this->assertEquals(8, $data->totalSteps);
 
-        // A soft cap of 1 should not fit in the hanging two items
+        // WHEN soft cap is set to 1 (not enough for 2 remaining items)
         Config::modify()->set(SearchUpdateBatchedProcessor::class, 'batch_soft_cap', 1);
         $processor->batchData();
         $data = $processor->getJobData();
+
+        // THEN batches remain at 9
         $this->assertEquals(9, $data->totalSteps);
 
-        // Extra large soft cap should fit both items
+        // WHEN soft cap is set to 4 (more than enough for 2 remaining items)
         Config::modify()->set(SearchUpdateBatchedProcessor::class, 'batch_soft_cap', 4);
         $processor->batchData();
         $data = $processor->getJobData();
+
+        // THEN batches reduce to 8
         $this->assertEquals(8, $data->totalSteps);
 
-        // Process all data and ensure that all are processed adequately
+        // WHEN all 8 batches are processed
         for ($pass = 1; $pass <= 8; $pass++) {
             $processor->process();
         }
         $data = $processor->getJobData();
+
+        // THEN all 42 items are indexed and the job is complete
         $this->assertEquals(8, $data->currentStep);
         $this->assertEquals(42, count($index->getAdded() ?? []));
         $this->assertTrue($data->isComplete);

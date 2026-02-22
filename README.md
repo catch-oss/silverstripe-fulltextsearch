@@ -1,21 +1,19 @@
 # FullTextSearch module
 
 <!-- PROJECT SHIELDS -->
-[![SonarCloud](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml)
 [![Test](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/test.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=bugs)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=code_smells)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=coverage)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Duplicated Lines Density](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=ncloc)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=security_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=sqale_index)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=catch-design_catch-oss-silverstripe-fulltextsearch&metric=vulnerabilities)](https://sonarcloud.io/component_measures?id=catch-design_catch-oss-silverstripe-fulltextsearch)
+[![SonarCloud](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml/badge.svg)](https://github.com/catch-oss/silverstripe-fulltextsearch/actions/workflows/sonar.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=catch-oss_silverstripe-fulltextsearch&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=catch-oss_silverstripe-fulltextsearch)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=catch-oss_silverstripe-fulltextsearch&metric=coverage)](https://sonarcloud.io/component_measures?id=catch-oss_silverstripe-fulltextsearch)
 
 Adds support for fulltext search engines like Sphinx and Solr to Silverstripe CMS.
+
+## Compatibility
+
+| Version | Silverstripe | PHP |
+|---------|-------------|-----|
+| release/6 | ^6.0 | ^8.5 |
+| release/5 | ^5.1 | ^8.1 |
 
 ## Important notes when upgrading to fulltextsearch 3.7.0+
 
@@ -95,9 +93,7 @@ it's recommended you update your implementation to call `SearchableService::isVi
 
 ## Requirements
 
-* Silverstripe 4.0+
-
-**Note:** For Silverstripe 3.x, please use the [2.x release line](https://github.com/silverstripe/silverstripe-fulltextsearch/tree/2).
+See compatibility table above.
 
 ## Documentation
 

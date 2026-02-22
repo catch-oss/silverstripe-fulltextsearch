@@ -5,11 +5,12 @@ namespace SilverStripe\FullTextSearch\Solr\Tasks;
 use ReflectionClass;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Dev\Debug;
 use SilverStripe\FullTextSearch\Search\Variants\SearchVariant;
-use SilverStripe\ORM\DataList;
 use SilverStripe\FullTextSearch\Solr\Reindex\Handlers\SolrReindexHandler;
 use SilverStripe\FullTextSearch\Solr\SolrIndex;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Task used for both initiating a new reindex, as well as for processing incremental batches
@@ -19,7 +20,7 @@ use SilverStripe\FullTextSearch\Solr\SolrIndex;
  *  - class (to limit to a single class)
  *  - verbose (optional)
  *
- * When running with a single batch, provide the following querystring arguments:
+ * When running with a single batch, provide the following options:
  *  - index
  *  - class
  *  - variantstate
@@ -27,9 +28,13 @@ use SilverStripe\FullTextSearch\Solr\SolrIndex;
  */
 class Solr_Reindex extends Solr_BuildTask
 {
-    private static $segment = 'Solr_Reindex';
+    protected static string $commandName = 'solr:reindex';
+    protected static string $description = 'Reindex Solr indexes';
 
-    protected $enabled = true;
+    /**
+     * @config
+     */
+    private static $segment = 'Solr_Reindex';
 
     /**
      * Number of records to load and index per request
@@ -38,6 +43,22 @@ class Solr_Reindex extends Solr_BuildTask
      * @config
      */
     private static $recordsPerRequest = 200;
+
+    public function getTitle(): string
+    {
+        return 'Solr Reindex';
+    }
+
+    public function getOptions(): array
+    {
+        return [
+            new InputOption('class', null, InputOption::VALUE_OPTIONAL, 'Class to limit reindex to'),
+            new InputOption('index', null, InputOption::VALUE_OPTIONAL, 'Index name or class'),
+            new InputOption('groups', null, InputOption::VALUE_OPTIONAL, 'Total number of groups'),
+            new InputOption('group', null, InputOption::VALUE_OPTIONAL, 'Group number to process'),
+            new InputOption('variantstate', null, InputOption::VALUE_OPTIONAL, 'JSON-encoded variant state'),
+        ];
+    }
 
     /**
      * Get the reindex handler
@@ -49,31 +70,27 @@ class Solr_Reindex extends Solr_BuildTask
         return Injector::inst()->get(SolrReindexHandler::class);
     }
 
-    /**
-     * @param SS_HTTPRequest $request
-     */
-    public function run($request)
+    public function run(InputInterface $input, PolyOutput $output): int
     {
-        parent::run($request);
+        parent::run($input, $output);
 
-        $this->extend('updateBeforeSolrReindexTask', $request);
+        $this->extend('updateBeforeSolrReindexTask', $input);
 
         // Reset state
         $originalState = SearchVariant::current_state();
-        $this->doReindex($request);
+        $this->doReindex($input);
         SearchVariant::activate_state($originalState);
 
-        $this->extend('updateAfterSolrReindexTask', $request);
+        $this->extend('updateAfterSolrReindexTask', $input);
+
+        return 0;
     }
 
-    /**
-     * @param SS_HTTPRequest $request
-     */
-    protected function doReindex($request)
+    protected function doReindex(InputInterface $input): void
     {
-        $class = $request->getVar('class');
+        $class = $input->getOption('class');
 
-        $index = $request->getVar('index');
+        $index = $input->getOption('index');
 
         //find the index classname by IndexName
         // this is for when index names do not match the class name (this can be done by overloading getIndexName() on
@@ -98,14 +115,14 @@ class Solr_Reindex extends Solr_BuildTask
         // Check if we are re-indexing a single group
         // If not using queuedjobs, we need to invoke Solr_Reindex as a separate process
         // Otherwise each group is processed via a SolrReindexGroupJob
-        $groups = $request->getVar('groups');
+        $groups = $input->getOption('groups');
 
         $handler = $this->getHandler();
         if ($groups) {
             // Run grouped batches (id % groups = group)
-            $group = $request->getVar('group');
+            $group = $input->getOption('group');
             $indexInstance = singleton($index);
-            $state = json_decode($request->getVar('variantstate') ?? '', true);
+            $state = json_decode($input->getOption('variantstate') ?? '', true);
 
             $handler->runGroup($this->getLogger(), $indexInstance, $state, $class, $groups, $group);
             return;

@@ -6,7 +6,7 @@ use SilverStripe\Dev\Deprecation;
 use SilverStripe\FullTextSearch\Search\Adapters\SearchAdapterInterface;
 use SilverStripe\FullTextSearch\Search\Criteria\SearchCriteria;
 use SilverStripe\FullTextSearch\Search\Criteria\SearchCriteriaInterface;
-use SilverStripe\View\ViewableData;
+use SilverStripe\Model\ModelData;
 use stdClass;
 
 /**
@@ -14,7 +14,7 @@ use stdClass;
  *
  * API very much still in flux.
  */
-class SearchQuery extends ViewableData
+class SearchQuery extends ModelData
 {
     public static $missing = null;
     public static $present = null;

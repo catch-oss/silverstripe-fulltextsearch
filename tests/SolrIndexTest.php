@@ -49,11 +49,14 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataHasOne()
     {
+        // GIVEN a fake Solr index
         $index = new SolrIndexTest_FakeIndex();
-        $data = $index->fieldData('HasOneObject.Field1');
 
+        // WHEN retrieving field data for a HasOne relation
+        $data = $index->fieldData('HasOneObject.Field1');
         $data = $data[SearchUpdaterTest_Container::class . '_HasOneObject_Field1'];
 
+        // THEN the field data reflects the correct origin, base and class
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['origin']);
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['base']);
         $this->assertEquals(SearchUpdaterTest_HasOne::class, $data['class']);
@@ -61,10 +64,14 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataHasMany()
     {
+        // GIVEN a fake Solr index
         $index = new SolrIndexTest_FakeIndex();
+
+        // WHEN retrieving field data for a HasMany relation
         $data = $index->fieldData('HasManyObjects.Field1');
         $data = $data[SearchUpdaterTest_Container::class . '_HasManyObjects_Field1'];
 
+        // THEN the field data reflects the correct origin, base and class
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['origin']);
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['base']);
         $this->assertEquals(SearchUpdaterTest_HasMany::class, $data['class']);
@@ -72,10 +79,14 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataManyMany()
     {
+        // GIVEN a fake Solr index
         $index = new SolrIndexTest_FakeIndex();
+
+        // WHEN retrieving field data for a ManyMany relation
         $data = $index->fieldData('ManyManyObjects.Field1');
         $data = $data[SearchUpdaterTest_Container::class . '_ManyManyObjects_Field1'];
 
+        // THEN the field data reflects the correct origin, base and class
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['origin']);
         $this->assertEquals(SearchUpdaterTest_Container::class, $data['base']);
         $this->assertEquals(SearchUpdaterTest_ManyMany::class, $data['class']);
@@ -83,9 +94,13 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataAmbiguousHasMany()
     {
+        // GIVEN an index with ambiguous HasMany relations across two containers
         $index = new SolrIndexTest_AmbiguousRelationIndex();
+
+        // WHEN retrieving field data for the ambiguous HasMany relation
         $data = $index->fieldData('HasManyObjects.Field1');
 
+        // THEN both containers are present in the field data with correct metadata
         $this->assertArrayHasKey(SearchUpdaterTest_Container::class . '_HasManyObjects_Field1', $data);
         $this->assertArrayHasKey(SearchUpdaterTest_OtherContainer::class . '_HasManyObjects_Field1', $data);
 
@@ -102,9 +117,13 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataAmbiguousManyMany()
     {
+        // GIVEN an index with ambiguous ManyMany relations across two containers
         $index = new SolrIndexTest_AmbiguousRelationIndex();
+
+        // WHEN retrieving field data for the ambiguous ManyMany relation
         $data = $index->fieldData('ManyManyObjects.Field1');
 
+        // THEN both containers are present in the field data with correct metadata
         $this->assertArrayHasKey(SearchUpdaterTest_Container::class . '_ManyManyObjects_Field1', $data);
         $this->assertArrayHasKey(SearchUpdaterTest_OtherContainer::class . '_ManyManyObjects_Field1', $data);
 
@@ -121,9 +140,13 @@ class SolrIndexTest extends SapphireTest
 
     public function testFieldDataAmbiguousManyManyInherited()
     {
+        // GIVEN an index with ambiguous ManyMany relations including an inherited container
         $index = new SolrIndexTest_AmbiguousRelationInheritedIndex();
+
+        // WHEN retrieving field data for the ambiguous ManyMany relation
         $data = $index->fieldData('ManyManyObjects.Field1');
 
+        // THEN both base containers are present but the inherited container is not duplicated
         $this->assertArrayHasKey(SearchUpdaterTest_Container::class . '_ManyManyObjects_Field1', $data);
         $this->assertArrayHasKey(SearchUpdaterTest_OtherContainer::class . '_ManyManyObjects_Field1', $data);
         $this->assertArrayNotHasKey(SearchUpdaterTest_ExtendedContainer::class . '_ManyManyObjects_Field1', $data);
@@ -144,9 +167,10 @@ class SolrIndexTest extends SapphireTest
      */
     public function testBoostedQuery()
     {
+        // GIVEN a mock Solr service expecting a boosted query string
         /** @var Solr3Service|MockObject $serviceMock */
         $serviceMock = $this->getMockBuilder(Solr3Service::class)
-            ->setMethods(['search'])
+            ->onlyMethods(['search'])
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -162,12 +186,15 @@ class SolrIndexTest extends SapphireTest
         $index = new SolrIndexTest_FakeIndex();
         $index->setService($serviceMock);
 
+        // WHEN searching with per-field boost values
         $query = new SearchQuery();
         $query->addSearchTerm(
             'term',
             null,
             array('Field1' => 1.5, 'HasOneObject_Field1' => 3)
         );
+
+        // THEN the search executes with the expected boosted query (verified by mock expectation)
         $index->search($query);
     }
 
@@ -176,13 +203,14 @@ class SolrIndexTest extends SapphireTest
      */
     public function testBoostedField()
     {
+        // GIVEN a boosted index with field-level boost values and subsites disabled
         if (class_exists(Subsite::class)) {
             Config::modify()->set(SearchVariantSubsites::class, 'enabled', false);
         }
 
         /** @var Solr3Service|MockObject $serviceMock */
         $serviceMock = $this->getMockBuilder(Solr3Service::class)
-            ->setMethods(['search'])
+            ->onlyMethods(['search'])
             ->getMock();
 
         $serviceMock->expects($this->once())
@@ -202,43 +230,40 @@ class SolrIndexTest extends SapphireTest
         $index = new SolrIndexTest_BoostedIndex();
         $index->setService($serviceMock);
 
+        // WHEN searching with a plain term on the boosted index
         $query = new SearchQuery();
         $query->addSearchTerm('term');
+
+        // THEN the search passes field boost weights in the qf parameter (verified by mock expectation)
         $index->search($query);
     }
 
     public function testHighlightQueryOnBoost()
     {
-        /** @var SilverStripe\FullTextSearch\Solr\Services\Solr3Service|ObjectProphecy $serviceMock */
+        // GIVEN a mock Solr service expecting two search calls
+        /** @var Solr3Service|MockObject $serviceMock */
         $serviceMock = $this->getMockBuilder(Solr3Service::class)
-            ->setMethods(['search'])
+            ->onlyMethods(['search'])
             ->getMock();
 
+        $callIndex = 0;
         $serviceMock->expects($this->exactly(2))
             ->method('search')
-            ->withConsecutive(
-                [
-                    $this->equalTo('+(Field1:term^1.5 OR HasOneObject_Field1:term^3)'),
-                    $this->anything(),
-                    $this->anything(),
-                    $this->logicalNot(
-                        $this->arrayHasKey('hl.q')
-                    ),
-                    $this->anything()
-                ],
-                [
-                    $this->equalTo('+(Field1:term^1.5 OR HasOneObject_Field1:term^3)'),
-                    $this->anything(),
-                    $this->anything(),
-                    $this->arrayHasKey('hl.q'),
-                    $this->anything()
-                ]
-            )->willReturn($this->getFakeRawSolrResponse());
+            ->willReturnCallback(function ($query, $offset, $limit, $params, $extra) use (&$callIndex) {
+                $this->assertEquals('+(Field1:term^1.5 OR HasOneObject_Field1:term^3)', $query);
+                if ($callIndex === 0) {
+                    $this->assertArrayNotHasKey('hl.q', $params);
+                } else {
+                    $this->assertArrayHasKey('hl.q', $params);
+                }
+                $callIndex++;
+                return $this->getFakeRawSolrResponse();
+            });
 
         $index = new SolrIndexTest_FakeIndex();
         $index->setService($serviceMock);
 
-        // Search without highlighting
+        // WHEN searching without highlighting
         $query = new SearchQuery();
         $query->addSearchTerm(
             'term',
@@ -247,7 +272,7 @@ class SolrIndexTest extends SapphireTest
         );
         $index->search($query);
 
-        // Search with highlighting
+        // WHEN searching with highlighting enabled
         $query = new SearchQuery();
         $query->addSearchTerm(
             'term',
@@ -255,11 +280,14 @@ class SolrIndexTest extends SapphireTest
             array('Field1' => 1.5, 'HasOneObject_Field1' => 3)
         );
         $index->search($query, -1, -1, array('hl' => true));
+
+        // THEN the first call has no hl.q param and the second call has hl.q param (verified by callback)
     }
 
     public function testIndexExcludesNullValues()
     {
-        /** @var Solr3Service|ObjectProphecy $serviceMock */
+        // GIVEN a fake index and an object with some NULL fields
+        /** @var Solr3Service $serviceMock */
         $serviceMock = $this->createMock(Solr3Service::class);
         $index = new SolrIndexTest_FakeIndex();
         $index->setService($serviceMock);
@@ -268,7 +296,11 @@ class SolrIndexTest extends SapphireTest
         $obj->Field1 = 'Field1 val';
         $obj->Field2 = null;
         $obj->MyDate = null;
+
+        // WHEN adding the object to the index
         $docs = $index->add($obj);
+
+        // THEN non-NULL fields are indexed and NULL fields are excluded
         $value = $docs[0]->getField(SearchUpdaterTest_Container::class . '_Field1');
         $this->assertEquals('Field1 val', $value['value'], 'Writes non-NULL string fields');
         $value = $docs[0]->getField(SearchUpdaterTest_Container::class . '_Field2');
@@ -276,40 +308,52 @@ class SolrIndexTest extends SapphireTest
         $value = $docs[0]->getField(SearchUpdaterTest_Container::class . '_MyDate');
         $this->assertFalse($value, 'Ignores date fields if they are NULL');
 
+        // WHEN adding the same object with a non-NULL date
         $obj->MyDate = '2010-12-30';
         $docs = $index->add($obj);
+
+        // THEN the date field is indexed in ISO 8601 format
         $value = $docs[0]->getField(SearchUpdaterTest_Container::class . '_MyDate');
         $this->assertEquals('2010-12-30T00:00:00Z', $value['value'], 'Writes non-NULL dates');
     }
 
     public function testAddFieldExtraOptions()
     {
+        // GIVEN a fake index in live environment where Field1 defaults to stored=false
         Injector::inst()->get(Kernel::class)->setEnvironment('live');
-
         $index = new SolrIndexTest_FakeIndex();
+        $fieldName = str_replace('\\', '_', SearchUpdaterTest_Container::class) . '_Field1';
 
         $defs = simplexml_load_string('<fields>' . $index->getFieldDefinitions() . '</fields>');
-        $defField1 = $defs->xpath('field[@name="' . SearchUpdaterTest_Container::class . '_Field1"]');
-        $this->assertEquals((string)$defField1[0]['stored'], 'false');
+        $defField1 = $defs->xpath('field[@name="' . $fieldName . '"]');
+        $this->assertEquals('false', (string)$defField1[0]['stored']);
 
+        // WHEN adding a filter field with stored=true option
         $index->addFilterField('Field1', null, array('stored' => 'true'));
+
+        // THEN the field definition reflects stored=true
         $defs = simplexml_load_string('<fields>' . $index->getFieldDefinitions() . '</fields>');
-        $defField1 = $defs->xpath('field[@name="' . SearchUpdaterTest_Container::class . '_Field1"]');
-        $this->assertEquals((string)$defField1[0]['stored'], 'true');
+        $defField1 = $defs->xpath('field[@name="' . $fieldName . '"]');
+        $this->assertEquals('true', (string)$defField1[0]['stored']);
     }
 
     public function testAddAnalyzer()
     {
+        // GIVEN a fake index where Field1 has no analyzer
         $index = new SolrIndexTest_FakeIndex();
+        $fieldName = str_replace('\\', '_', SearchUpdaterTest_Container::class) . '_Field1';
 
         $defs = simplexml_load_string('<fields>' . $index->getFieldDefinitions() . '</fields>');
-        $defField1 = $defs->xpath('field[@name="' . SearchUpdaterTest_Container::class . '_Field1"]');
+        $defField1 = $defs->xpath('field[@name="' . $fieldName . '"]');
         $analyzers = $defField1[0]->analyzer;
         $this->assertFalse((bool)$analyzers);
 
+        // WHEN adding an HTML strip char filter analyzer to Field1
         $index->addAnalyzer('Field1', 'charFilter', array('class' => 'solr.HTMLStripCharFilterFactory'));
+
+        // THEN the field definition includes the analyzer with the correct char filter class
         $defs = simplexml_load_string('<fields>' . $index->getFieldDefinitions() . '</fields>');
-        $defField1 = $defs->xpath('field[@name="' . SearchUpdaterTest_Container::class . '_Field1"]');
+        $defField1 = $defs->xpath('field[@name="' . $fieldName . '"]');
         $analyzers = $defField1[0]->analyzer;
         $this->assertTrue((bool)$analyzers);
         $this->assertEquals('solr.HTMLStripCharFilterFactory', $analyzers[0]->charFilter[0]['class']);
@@ -317,12 +361,15 @@ class SolrIndexTest extends SapphireTest
 
     public function testAddCopyField()
     {
+        // GIVEN a fake index with a copy field mapping from source to dest
         $index = new SolrIndexTest_FakeIndex();
         $index->addCopyField('sourceField', 'destField');
 
+        // WHEN retrieving copy field definitions
         $defs = simplexml_load_string('<fields>' . $index->getCopyFieldDefinitions() . '</fields>');
         $copyField = $defs->xpath('copyField');
 
+        // THEN the copy field has the correct source and destination
         $this->assertEquals('sourceField', $copyField[0]['source']);
         $this->assertEquals('destField', $copyField[0]['dest']);
     }
@@ -332,44 +379,58 @@ class SolrIndexTest extends SapphireTest
      */
     public function testStoredFields()
     {
-        // Test two fields
+        // GIVEN an index with Field1 as stored and Field2 as fulltext (not stored)
         $index = new SolrIndexTest_FakeIndex2();
         $index->addStoredField('Field1');
         $index->addFulltextField('Field2');
+        $className = str_replace('\\', '_', SearchUpdaterTest_Container::class);
+
+        // WHEN retrieving field definitions
         $schema = $index->getFieldDefinitions();
+
+        // THEN Field1 is stored and Field2 is not stored
         $this->assertStringContainsString(
-            "<field name='" . SearchUpdaterTest_Container::class . "_Field1' type='text' indexed='true' stored='true'",
+            "<field name='" . $className . "_Field1' type='text' indexed='true' stored='true'",
             $schema
         );
         $this->assertStringContainsString(
-            "<field name='" . SearchUpdaterTest_Container::class . "_Field2' type='text' indexed='true' stored='false'",
+            "<field name='" . $className . "_Field2' type='text' indexed='true' stored='false'",
             $schema
         );
 
-        // Test with addAllFulltextFields
+        // GIVEN an index using addAllFulltextFields with Field2 overridden as stored
         $index2 = new SolrIndexTest_FakeIndex2();
         $index2->addAllFulltextFields();
         $index2->addStoredField('Field2');
+
+        // WHEN retrieving field definitions
         $schema2 = $index2->getFieldDefinitions();
+
+        // THEN Field1 is not stored (default) and Field2 is stored (overridden)
         $this->assertStringContainsString(
-            "<field name='" . SearchUpdaterTest_Container::class . "_Field1' type='text' indexed='true' stored='false'",
+            "<field name='" . $className . "_Field1' type='text' indexed='true' stored='false'",
             $schema2
         );
         $this->assertStringContainsString(
-            "<field name='" . SearchUpdaterTest_Container::class . "_Field2' type='text' indexed='true' stored='true'",
+            "<field name='" . $className . "_Field2' type='text' indexed='true' stored='true'",
             $schema2
         );
     }
 
     public function testSanitiseClassName()
     {
+        // GIVEN a fake index
         $index = new SolrIndexTest_FakeIndex2;
 
+        // WHEN sanitising a class name with the default separator
+        // THEN backslashes are double-escaped
         $this->assertSame(
             'SilverStripe\\\\FullTextSearch\\\\Tests\\\\SolrIndexTest',
             $index->sanitiseClassName(static::class)
         );
 
+        // WHEN sanitising a class name with a custom separator
+        // THEN backslashes are replaced with the custom separator
         $this->assertSame(
             'SilverStripe-FullTextSearch-Tests-SolrIndexTest',
             $index->sanitiseClassName(static::class, '-')
@@ -378,7 +439,11 @@ class SolrIndexTest extends SapphireTest
 
     public function testGetIndexName()
     {
+        // GIVEN a fake index
         $index = new SolrIndexTest_FakeIndex2;
+
+        // WHEN getting the index name
+        // THEN it returns the sanitised fully-qualified class name
         $this->assertSame(
             'SilverStripe-FullTextSearch-Tests-SolrIndexTest-SolrIndexTest_FakeIndex2',
             $index->getIndexName()
@@ -387,11 +452,13 @@ class SolrIndexTest extends SapphireTest
 
     public function testGetIndexNameWithPrefixAndSuffixFromEnvironment()
     {
+        // GIVEN a fake index with environment prefix and suffix configured
         $index = new SolrIndexTest_FakeIndex2;
-
         Environment::putEnv('SS_SOLR_INDEX_PREFIX="foo_"');
         Environment::putEnv('SS_SOLR_INDEX_SUFFIX="_bar"');
 
+        // WHEN getting the index name
+        // THEN it includes the environment prefix and suffix
         $this->assertSame(
             'foo_SilverStripe-FullTextSearch-Tests-SolrIndexTest-SolrIndexTest_FakeIndex2_bar',
             $index->getIndexName()
@@ -407,13 +474,13 @@ class SolrIndexTest extends SapphireTest
      */
     public function testShowInSearch()
     {
-        // allow anonymous users to assess draft-only content to pass canView() check (will auto-reset for next test)
+        // GIVEN draft mode with anonymous access and various DataObjects with ShowInSearch set
         Versioned::set_draft_site_secured(false);
         Versioned::set_reading_mode('Stage.' . Versioned::DRAFT);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
 
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['addDocument', 'deleteById'])
+            ->onlyMethods(['addDocument', 'deleteById'])
             ->getMock();
 
         $index = new SolrIndexTest_ShowInSearchIndex();
@@ -481,33 +548,27 @@ class SolrIndexTest extends SapphireTest
             return in_array($this->createSolrDocKey($doc), $validKeys ?? []);
         };
 
+        // WHEN flushing dirty indexes
         $serviceMock
             ->expects($this->exactly(5))
             ->method('addDocument')
-            ->withConsecutive(
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)]
-            );
+            ->with($this->callback($callback));
 
-        // This is what actually triggers all the solr stuff
+        // THEN only 5 documents with ShowInSearch=true (or getShowInSearch()=true) are added
         SearchUpdater::flush_dirty_indexes();
 
-        // delete a solr doc by setting ShowInSearch to false
+        // WHEN setting ShowInSearch to false on a previously indexed page
         $pageA->ShowInSearch = false;
         $pageA->write();
 
         $serviceMock
             ->expects($this->exactly(1))
             ->method('deleteById')
-            ->withConsecutive(
-                [$this->callback(function (string $docID) use ($pageA): bool {
-                    return strpos($docID ?? '', $pageA->ID . '-' . SiteTree::class) !== false;
-                })]
-            );
+            ->with($this->callback(function (string $docID) use ($pageA): bool {
+                return strpos($docID ?? '', $pageA->ID . '-' . SiteTree::class) !== false;
+            }));
 
+        // THEN the document is deleted from the index
         SearchableService::singleton()->clearCache();
         SearchUpdater::flush_dirty_indexes();
     }
@@ -521,13 +582,13 @@ class SolrIndexTest extends SapphireTest
      */
     public function testCanView()
     {
-        // allow anonymous users to assess draft-only content to pass canView() check (will auto-reset for next test)
+        // GIVEN draft mode with anonymous access and various DataObjects with different canView permissions
         Versioned::set_draft_site_secured(false);
         Versioned::set_reading_mode('Stage.' . Versioned::DRAFT);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
 
         $serviceMock = $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['addDocument', 'deleteById'])
+            ->onlyMethods(['addDocument', 'deleteById'])
             ->getMock();
 
         $index = new SolrIndexTest_ShowInSearchIndex();
@@ -581,31 +642,27 @@ class SolrIndexTest extends SapphireTest
             return in_array($this->createSolrDocKey($doc), $validKeys ?? []);
         };
 
+        // WHEN flushing dirty indexes
         $serviceMock
             ->expects($this->exactly(3))
             ->method('addDocument')
-            ->withConsecutive(
-                [$this->callback($callback)],
-                [$this->callback($callback)],
-                [$this->callback($callback)]
-            );
+            ->with($this->callback($callback));
 
-        // This is what actually triggers all the solr stuff
+        // THEN only 3 documents viewable by anonymous users are added
         SearchUpdater::flush_dirty_indexes();
 
-        // delete a solr doc by setting ShowInSearch to false
+        // WHEN setting ShowInSearch to false on a previously indexed page
         $pageA->ShowInSearch = false;
         $pageA->write();
 
         $serviceMock
             ->expects($this->exactly(1))
             ->method('deleteById')
-            ->withConsecutive(
-                [$this->callback(function (string $docID) use ($pageA): bool {
-                    return strpos($docID ?? '', $pageA->ID . '-' . SiteTree::class) !== false;
-                })]
-            );
+            ->with($this->callback(function (string $docID) use ($pageA): bool {
+                return strpos($docID ?? '', $pageA->ID . '-' . SiteTree::class) !== false;
+            }));
 
+        // THEN the document is deleted from the index
         SearchableService::singleton()->clearCache();
         SearchUpdater::flush_dirty_indexes();
     }

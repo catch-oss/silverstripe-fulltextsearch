@@ -14,8 +14,8 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBString;
 use SilverStripe\ORM\Queries\SQLSelect;
-use SilverStripe\View\ViewableData;
-use SilverStripe\ORM\SS_List;
+use SilverStripe\Model\ModelData;
+use SilverStripe\Model\List\SS_List;
 
 /**
  * SearchIndex is the base index class. Each connector will provide a subclass of this that
@@ -44,7 +44,7 @@ use SilverStripe\ORM\SS_List;
  * - Specifying update rules that are not extractable from metadata (because the values come from functions for instance)
  *
  */
-abstract class SearchIndex extends ViewableData
+abstract class SearchIndex extends ModelData
 {
     /**
      * Allows this index to hide a parent index. Specifies the name of a parent index to disable
@@ -224,7 +224,7 @@ abstract class SearchIndex extends ViewableData
                     $singleton = singleton($dataclass);
 
                     if ($singleton->hasMethod("get$field") || $singleton->hasField($field)) {
-                        $type = $singleton->castingClass($field);
+                        $type = $singleton->castingHelper($field);
                         if (!$type) {
                             $type = 'String';
                         }
@@ -375,7 +375,12 @@ abstract class SearchIndex extends ViewableData
                     list($type, $args) = ClassInfo::parse_class_spec($type);
 
                     /** @var DBField $object */
-                    $object = Injector::inst()->get($type, false, ['Name' => 'test']);
+                    try {
+                        $object = Injector::inst()->get($type, false, ['Name' => 'test']);
+                    } catch (\InvalidArgumentException $e) {
+                        // Skip field types that can't be instantiated (e.g. DBGenerated in SS6)
+                        continue;
+                    }
                     if ($object instanceof DBString) {
                         $this->addFulltextField($field);
                     }

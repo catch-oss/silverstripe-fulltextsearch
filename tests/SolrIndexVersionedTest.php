@@ -69,7 +69,7 @@ class SolrIndexVersionedTest extends SapphireTest
         // Setup mock
         /** @var SilverStripe\FullTextSearch\Solr\Services\Solr3Service|ObjectProphecy $serviceMock */
         $serviceMock = $this->getMockBuilder(Solr3Service::class)
-            ->setMethods($setMethods)
+            ->onlyMethods($setMethods)
             ->getMock();
 
         self::$index->setService($serviceMock);
@@ -113,11 +113,11 @@ class SolrIndexVersionedTest extends SapphireTest
 
     public function testPublishing()
     {
+        // GIVEN two versioned objects written in draft stage
         $classesToSkip = [SearchVariantVersionedTest_Item::class, SolrIndexVersionedTest_Object::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
 
-        // Check that write updates Stage
         Versioned::set_stage(Versioned::DRAFT);
 
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Foo'));
@@ -128,18 +128,21 @@ class SolrIndexVersionedTest extends SapphireTest
         $doc1 = $this->getSolrDocument(SearchVariantVersionedTest_Item::class, $item, 'Foo', Versioned::DRAFT);
         $doc2 = $this->getSolrDocument(SolrIndexVersionedTest_Object::class, $object, 'Bar', Versioned::DRAFT);
 
-        // Ensure correct call is made to Solr
+        // WHEN dirty indexes are flushed after writing draft records
+        $expectedDocs = [$doc1, $doc2];
+        $addCallIndex = 0;
         $this->getServiceMock(['addDocument', 'commit'])
             ->expects($this->exactly(2))
             ->method('addDocument')
-            ->withConsecutive(
-                [$this->equalTo($doc1)],
-                [$this->equalTo($doc2)]
-            );
+            ->willReturnCallback(function ($doc) use (&$addCallIndex, $expectedDocs) {
+                // THEN Solr receives a draft document for each written object
+                $this->assertEquals($expectedDocs[$addCallIndex], $doc);
+                $addCallIndex++;
+            });
 
         SearchUpdater::flush_dirty_indexes();
 
-        // Check that write updates Live
+        // GIVEN two versioned objects written and published to live
         Versioned::set_stage(Versioned::DRAFT);
 
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Foo'));
@@ -155,27 +158,28 @@ class SolrIndexVersionedTest extends SapphireTest
         $doc3 = $this->getSolrDocument(SolrIndexVersionedTest_Object::class, $object, 'Bar', Versioned::DRAFT);
         $doc4 = $this->getSolrDocument(SolrIndexVersionedTest_Object::class, $object, 'Bar', Versioned::LIVE);
 
-        // Ensure correct call is made to Solr
+        // WHEN dirty indexes are flushed after writing and publishing
+        $expectedDocs = [$doc1, $doc2, $doc3, $doc4];
+        $addCallIndex = 0;
         $this->getServiceMock(['addDocument', 'commit'])
             ->expects($this->exactly(4))
             ->method('addDocument')
-            ->withConsecutive(
-                [$doc1],
-                [$doc2],
-                [$doc3],
-                [$doc4]
-            );
+            ->willReturnCallback(function ($doc) use (&$addCallIndex, $expectedDocs) {
+                // THEN Solr receives both draft and live documents for each published object
+                $this->assertEquals($expectedDocs[$addCallIndex], $doc);
+                $addCallIndex++;
+            });
 
         SearchUpdater::flush_dirty_indexes();
     }
 
     public function testDelete()
     {
+        // GIVEN a published versioned item deleted from the live stage
         $classesToSkip = [SearchVariantVersionedTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
 
-        // Delete the live record (not the stage)
         Versioned::set_stage(Versioned::DRAFT);
 
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Too'));
@@ -185,15 +189,16 @@ class SolrIndexVersionedTest extends SapphireTest
         $id = clone $item;
         $item->delete();
 
-        // Check that only the 'Live' version is deleted
+        // WHEN dirty indexes are flushed after deleting the live record
         $this->getServiceMock(['addDocument', 'commit', 'deleteById'])
             ->expects($this->exactly(1))
             ->method('deleteById')
             ->with($this->getExpectedDocumentId($id, Versioned::LIVE));
 
+        // THEN only the live version document is deleted from Solr
         SearchUpdater::flush_dirty_indexes();
 
-        // Delete the stage record
+        // GIVEN a published versioned item deleted from the draft stage
         Versioned::set_stage(Versioned::DRAFT);
 
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Too'));
@@ -202,12 +207,13 @@ class SolrIndexVersionedTest extends SapphireTest
         $id = clone $item;
         $item->delete();
 
-        // Check that only the 'Stage' version is deleted
+        // WHEN dirty indexes are flushed after deleting the draft record
         $this->getServiceMock(['addDocument', 'commit', 'deleteById'])
             ->expects($this->exactly(1))
             ->method('deleteById')
             ->with($this->getExpectedDocumentId($id, Versioned::DRAFT));
 
+        // THEN only the draft version document is deleted from Solr
         SearchUpdater::flush_dirty_indexes();
     }
 }

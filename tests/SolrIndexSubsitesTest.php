@@ -76,7 +76,7 @@ class SolrIndexSubsitesTest extends SapphireTest
     protected function getServiceMock()
     {
         return $this->getMockBuilder(Solr4Service::class)
-            ->setMethods(['addDocument', 'commit'])
+            ->onlyMethods(['addDocument', 'commit'])
             ->getMock();
     }
 
@@ -108,6 +108,7 @@ class SolrIndexSubsitesTest extends SapphireTest
 
     public function testPublishing()
     {
+        // GIVEN a Page and File written to a subsite in draft stage
         $classesToSkip = [SiteTree::class, File::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
@@ -147,16 +148,24 @@ class SolrIndexSubsitesTest extends SapphireTest
             '_subsite' => $subsite1->ID,
         ]);
 
+        // WHEN dirty indexes are flushed
+        $expectedDocs = [$doc1, $doc2];
+        $addDocCallIndex = 0;
         $serviceMock
             ->expects($this->exactly(2))
             ->method('addDocument')
-            ->withConsecutive($doc1, $doc2);
+            ->willReturnCallback(function ($doc) use (&$addDocCallIndex, $expectedDocs) {
+                $this->assertEquals($expectedDocs[$addDocCallIndex], $doc);
+                $addDocCallIndex++;
+            });
 
+        // THEN two Solr documents are added with correct subsite IDs and metadata
         SearchUpdater::flush_dirty_indexes();
     }
 
     public function testCorrectSubsiteIDOnPageWrite()
     {
+        // GIVEN a mock page write manipulation with SubsiteID 0 and a subsite fixture
         $mockWrites = [
             '3367:SiteTree:a:1:{s:22:"SearchVariantVersioned";s:4:"Live";}' => [
                 'base' => 'SilverStripe\\CMS\\Model\\SiteTree',
@@ -192,10 +201,12 @@ class SolrIndexSubsitesTest extends SapphireTest
                 ],
             ],
         ];
+        // WHEN extractManipulationWriteState processes the write with SubsiteID 0
         $variant = new SearchVariantSubsites();
         $tmpMockWrites = $mockWrites;
         $variant->extractManipulationWriteState($tmpMockWrites);
 
+        // THEN the stateful ID state contains subsite ID 0
         foreach ($tmpMockWrites as $mockWrite) {
             $this->assertCount(1, $mockWrite['statefulids']);
             $statefulIDs = array_shift($mockWrite['statefulids']);
@@ -204,11 +215,14 @@ class SolrIndexSubsitesTest extends SapphireTest
             $this->assertEquals(0, $statefulIDs['state'][SearchVariantSubsites::class]);
         }
 
+        // WHEN the SubsiteID is changed to a real subsite and re-extracted
         $subsite = $this->objFromFixture(Subsite::class, 'subsite1');
         $tmpMockWrites = $mockWrites;
         $tmpMockWrites['3367:SiteTree:a:1:{s:22:"SearchVariantVersioned";s:4:"Live";}']['fields'][SiteTree::class . ':SubsiteID'] = $subsite->ID;
 
         $variant->extractManipulationWriteState($tmpMockWrites);
+
+        // THEN the stateful ID state contains the correct subsite ID
         foreach ($tmpMockWrites as $mockWrite) {
             $this->assertCount(1, $mockWrite['statefulids']);
             $statefulIDs = array_shift($mockWrite['statefulids']);
@@ -220,6 +234,7 @@ class SolrIndexSubsitesTest extends SapphireTest
 
     public function testCorrectSubsiteIDOnFileWrite()
     {
+        // GIVEN a mock file write manipulation with SubsiteID 0 and all subsite fixtures
         $subsiteIDs = ['0'] + $this->allFixtureIDs(Subsite::class);
         $subsiteIDs = array_map(function ($v) {
             return (string) $v;
@@ -249,9 +264,12 @@ class SolrIndexSubsitesTest extends SapphireTest
                 ],
             ],
         ];
+        // WHEN extractManipulationWriteState processes the file write with SubsiteID 0
         $variant = new SearchVariantSubsites();
         $tmpMockWrites = $mockWrites;
         $variant->extractManipulationWriteState($tmpMockWrites);
+
+        // THEN stateful IDs are created for all subsites with valid subsite IDs
         foreach ($tmpMockWrites as $mockWrite) {
             $this->assertCount(count($subsiteIDs ?? []), $mockWrite['statefulids']);
             foreach ($mockWrite['statefulids'] as $statefulIDs) {
@@ -267,11 +285,14 @@ class SolrIndexSubsitesTest extends SapphireTest
             }
         }
 
+        // WHEN the SubsiteID is changed to a specific subsite and re-extracted
         $subsite = $this->objFromFixture(Subsite::class, 'subsite1');
         $tmpMockWrites = $mockWrites;
         $tmpMockWrites['35910:File:a:0:{}']['fields'][File::class . ':SubsiteID'] = $subsite->ID;
 
         $variant->extractManipulationWriteState($tmpMockWrites);
+
+        // THEN only a single stateful ID is created with the correct subsite ID
         foreach ($tmpMockWrites as $mockWrite) {
             $this->assertCount(1, $mockWrite['statefulids']);
             $statefulIDs = array_shift($mockWrite['statefulids']);

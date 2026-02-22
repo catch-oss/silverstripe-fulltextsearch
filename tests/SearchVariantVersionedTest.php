@@ -45,7 +45,7 @@ class SearchVariantVersionedTest extends SapphireTest
 
     public function testPublishing()
     {
-        // Check that write updates Stage
+        // GIVEN a versioned item with canView checks excluded and draft indexing enabled
         $classesToSkip = [SearchVariantVersionedTest_Item::class];
         Config::modify()->set(SearchableService::class, 'indexing_canview_exclude_classes', $classesToSkip);
         Config::modify()->set(SearchableService::class, 'variant_state_draft_excluded', false);
@@ -53,25 +53,28 @@ class SearchVariantVersionedTest extends SapphireTest
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Foo'));
         $item->write();
 
+        // WHEN dirty indexes are flushed after writing to draft
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN only the Stage variant is indexed
         $this->assertEquals(array(
             array('ID' => $item->ID, '_versionedstage' => 'Stage')
         ), self::$index->getAdded(array('ID', '_versionedstage')));
 
-        // Check that publish updates Live
-
+        // WHEN the item is published from Stage to Live
         self::$index->reset();
 
         $item->copyVersionToStage('Stage', 'Live');
 
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN both Stage and Live variants are indexed
         $this->assertEquals(array(
             array('ID' => $item->ID, '_versionedstage' => 'Stage'),
             array('ID' => $item->ID, '_versionedstage' => 'Live')
         ), self::$index->getAdded(array('ID', '_versionedstage')));
 
-        // Just update a SiteTree field, and check it updates Stage
-
+        // WHEN a SiteTree field is updated on draft only
         self::$index->reset();
 
         $item->Title = "Pow!";
@@ -79,6 +82,7 @@ class SearchVariantVersionedTest extends SapphireTest
 
         SearchUpdater::flush_dirty_indexes();
 
+        // THEN only the Stage variant is re-indexed
         $expected = array(array(
             'ID' => $item->ID,
             '_versionedstage' => 'Stage'
@@ -86,14 +90,14 @@ class SearchVariantVersionedTest extends SapphireTest
         $added = self::$index->getAdded(array('ID', '_versionedstage'));
         $this->assertEquals($expected, $added);
 
-        // Test unpublish
-
+        // WHEN the item is unpublished (deleted from Live)
         self::$index->reset();
 
         $item->deleteFromStage('Live');
 
         SearchUpdater::flush_dirty_indexes();
 
+        // THEN the Live variant is removed from the index
         $this->assertCount(1, self::$index->deleted);
         $this->assertEquals(
             SiteTree::class,
@@ -111,21 +115,26 @@ class SearchVariantVersionedTest extends SapphireTest
 
     public function testExcludeVariantState()
     {
+        // GIVEN an index configured to exclude the Stage variant state
         $index = singleton(SearchVariantVersionedTest_IndexNoStage::class);
         FullTextSearch::force_index_list($index);
 
-        // Check that write doesn't update stage
+        // WHEN a new item is written to draft
         $item = new SearchVariantVersionedTest_Item(array('TestText' => 'Foo'));
         $item->write();
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN nothing is added to the index (Stage is excluded)
         $this->assertEquals(array(), $index->getAdded(array('ID', '_versionedstage')));
 
-        // Check that publish updates Live
+        // WHEN the item is published to Live
         $index->reset();
 
         $item->copyVersionToStage('Stage', 'Live');
 
         SearchUpdater::flush_dirty_indexes();
+
+        // THEN only the Live variant is indexed
         $this->assertEquals(array(
             array('ID' => $item->ID, '_versionedstage' => 'Live')
         ), $index->getAdded(array('ID', '_versionedstage')));
@@ -133,12 +142,19 @@ class SearchVariantVersionedTest extends SapphireTest
 
     public function testCanBeDisabledViaConfig()
     {
+        // GIVEN a SearchVariantVersioned instance
         $variant = new SearchVariantVersioned;
 
+        // WHEN the variant is enabled via config
         Config::modify()->set(SearchVariantVersioned::class, 'enabled', true);
+
+        // THEN it applies to the environment
         $this->assertTrue($variant->appliesToEnvironment());
 
+        // WHEN the variant is disabled via config
         Config::modify()->set(SearchVariantVersioned::class, 'enabled', false);
+
+        // THEN it does not apply to the environment
         $this->assertFalse($variant->appliesToEnvironment());
     }
 }

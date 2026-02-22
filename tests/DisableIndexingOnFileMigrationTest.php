@@ -15,10 +15,13 @@ class DisableIndexingOnFileMigrationTest extends SapphireTest
 
     public function testPreFileMigration()
     {
+        // GIVEN the search updater is enabled by default
         $this->assertTrue(SearchUpdater::config()->get('enabled'));
 
+        // WHEN the preFileMigration hook is triggered
         Injector::inst()->get(DisableIndexingOnFileMigration::class)->preFileMigration();
 
+        // THEN the search updater is disabled
         $this->assertFalse(SearchUpdater::config()->get('enabled'));
     }
 }
