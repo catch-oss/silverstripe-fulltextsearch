@@ -207,7 +207,7 @@ class SearchQuery extends ModelData
         $target,
         $value = null,
         $comparison = null,
-        AbstractSearchQueryWriter $searchQueryWriter = null
+        ?AbstractSearchQueryWriter $searchQueryWriter = null
     ) {
         if (!$target instanceof SearchCriteriaInterface) {
             $target = new SearchCriteria($target, $value, $comparison, $searchQueryWriter);

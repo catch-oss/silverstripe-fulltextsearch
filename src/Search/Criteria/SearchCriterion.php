@@ -128,7 +128,7 @@ class SearchCriterion implements SearchCriteriaInterface
         $target,
         $value,
         $comparison = null,
-        AbstractSearchQueryWriter $searchQueryWriter = null
+        ?AbstractSearchQueryWriter $searchQueryWriter = null
     ) {
         // EQUAL is our default comparison.
         if ($comparison === null) {
