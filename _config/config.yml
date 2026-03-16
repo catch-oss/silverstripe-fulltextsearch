@@ -17,3 +17,8 @@ SilverStripe\Core\Injector\Injector:
 SilverStripe\Dev\Tasks\MigrateFileTask:
   extensions:
     disableindexingonfilemigration: SilverStripe\FullTextSearch\Search\Extensions\DisableIndexingOnFileMigration
+
+SilverStripe\Cli\Sake:
+  commands:
+    - SilverStripe\FullTextSearch\Solr\Tasks\Solr_Configure
+    - SilverStripe\FullTextSearch\Solr\Tasks\Solr_Reindex
