@@ -6,7 +6,6 @@ use Psr\Log\LoggerInterface;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
-use SilverStripe\Core\Manifest\ModuleLoader;
 use SilverStripe\FullTextSearch\Solr\Solr;
 use SilverStripe\FullTextSearch\Solr\SolrIndex;
 use SilverStripe\ORM\DB;
@@ -81,20 +80,19 @@ class SolrReindexImmediateHandler extends SolrReindexBase
 
         $php = Environment::getEnv('SS_PHP_BIN') ?: Config::inst()->get(static::class, 'php_bin');
 
-        // Build script line
-        $frameworkPath = ModuleLoader::getModule('silverstripe/framework')->getPath();
-        $scriptPath = sprintf("%s%scli-script.php", $frameworkPath, DIRECTORY_SEPARATOR);
+        // Build script line using SS6 sake CLI
+        $sakePath = Director::baseFolder() . '/vendor/bin/sake';
 
         $cmd = [
             $php,
-            $scriptPath,
-            "dev/tasks/{$taskName}",
-            "index={$indexClass}",
-            "class={$class}",
-            "group={$group}",
-            "groups={$groups}",
-            "variantstate={$statevar}",
-            "verbose=1"
+            $sakePath,
+            "solr:reindex",
+            "--index={$indexClass}",
+            "--class={$class}",
+            "--group={$group}",
+            "--groups={$groups}",
+            "--variantstate={$statevar}",
+            "--verbose"
         ];
         $logger->info('Running ' . implode(' ', $cmd));
 
