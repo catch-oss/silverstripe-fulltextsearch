@@ -2,6 +2,7 @@
 namespace SilverStripe\FullTextSearch\Solr\Tasks;
 
 use Psr\Log\LoggerInterface;
+use SilverStripe\Core\Extensible;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\FullTextSearch\Utils\Logging\SearchLogFactory;
 use SilverStripe\PolyExecution\PolyCommand;
@@ -13,6 +14,8 @@ use Symfony\Component\Console\Input\InputInterface;
  */
 abstract class Solr_BuildTask extends PolyCommand
 {
+    use Extensible;
+
     /**
      * Logger
      *
