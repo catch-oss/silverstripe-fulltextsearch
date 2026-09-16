@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- CI tests against MySQL 8.4; requires SilverStripe ^6.2 (release/6.2 branch)
 - Upgraded to Silverstripe 6 compatibility
 - Updated PHP requirement to ^8.5
 - Migrated test suite to PHPUnit 11
