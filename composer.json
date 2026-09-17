@@ -22,7 +22,7 @@
     ],
     "require": {
         "php": "^8.5",
-        "silverstripe/framework": "^6.0",
+        "silverstripe/framework": "^6.2",
         "silverstripe/vendor-plugin": "^3.0",
         "monolog/monolog": "^3.8",
         "silverstripe/solr-php-client": "^1.0",
@@ -31,8 +31,8 @@
         "ext-curl": "*"
     },
     "require-dev": {
-        "silverstripe/cms": "^6.0",
-        "silverstripe/recipe-cms": "^6.0",
+        "silverstripe/cms": "^6.2",
+        "silverstripe/recipe-cms": "^6.2",
         "phpunit/phpunit": "^11.0",
         "symbiote/silverstripe-queuedjobs": "^6.0"
     },
